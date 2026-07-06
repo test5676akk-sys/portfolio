@@ -3,13 +3,12 @@
   --text-pure: #f5f5f7;
   --text-dim: #8e8e9f;
   --cyber-green: #00ff88;
-  --cyber-glow: rgba(0, 255, 136, 0.35);
+  --cyber-glow: rgba(0, 255, 136, 0.45);
   --font-mono: 'JetBrains Mono', monospace;
   --font-display: 'Oswald', sans-serif;
   --font-content: 'Manrope', sans-serif;
 }
 
-/* Сброс и базовые настройки */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   background-color: var(--bg-pure);
@@ -19,32 +18,33 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Отключаем стандартный курсор везде, кроме мобилок */
 @media (hover: hover) {
   body, a, button, input { cursor: none !important; }
 }
 
-/* Кастомный верхний индикатор скролла */
 .scroll-progress-line {
   position: fixed; top: 0; left: 0; width: 0%; height: 3px;
   background: var(--cyber-green); box-shadow: 0 0 10px var(--cyber-green);
   z-index: 10001; pointer-events: none;
 }
 
-/* Эффект шума поверх всего сайта */
 .noise-overlay {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
   background: url('https://grainy-gradients.vercel.app/noise.svg');
   opacity: 0.04; pointer-events: none; z-index: 9995;
 }
 
-/* ГЛАВНЫЙ КАНВАС ФОНА */
-#stage-canvas {
+/* ЭФФЕКТ СВЕТОВОЙ ВСПЫШКИ */
+.flash-overlay {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  z-index: -1; pointer-events: none;
+  background: #fff; opacity: 0; pointer-events: none; z-index: 10010;
 }
 
-/* КАСТОМНЫЕ КУРСОРЫ */
+#stage-canvas {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 1; pointer-events: none;
+}
+
 .cursor {
   position: fixed; width: 6px; height: 6px; background: var(--cyber-green);
   border-radius: 50%; pointer-events: none; z-index: 10005;
@@ -67,10 +67,9 @@ body {
 /* ПРЕЛОАДЕР */
 .preloader {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  background: transparent; /* Изменил на transparent */
-  z-index: 9999; display: flex; justify-content: center; align-items: center;
+  background: var(--bg-pure); z-index: 9999; display: flex; justify-content: center; align-items: center;
 }
-.preloader-wrapper { width: 100%; max-width: 650px; padding: 30px; text-align: center; }
+.preloader-wrapper { width: 100%; max-width: 650px; padding: 30px; text-align: center; position: relative; z-index: 10; }
 .glitch-title {
   font-family: var(--font-display); font-size: clamp(2.5rem, 7vw, 5.5rem);
   text-transform: uppercase; letter-spacing: 4px; line-height: 1; margin-bottom: 15px;
@@ -84,31 +83,14 @@ body {
 }
 #auth-btn::before {
   content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-  background: var(--cyber-green); transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: -1;
+  background: var(--cyber-green); transition: left 0.3s ease; z-index: -1;
 }
 #auth-btn:hover::before { left: 0; }
 #auth-btn:hover { color: #000; box-shadow: 0 0 35px var(--cyber-glow); }
 
-/* Терминал в прелоадере */
-.terminal-container {
-  background: rgba(10, 10, 15, 0.85); border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px; text-align: left; margin-bottom: 25px; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-}
-.terminal-header {
-  background: rgba(255,255,255,0.03); padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.05);
-  font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim);
-}
-.terminal-body {
-  padding: 20px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--cyber-green);
-  height: 140px; overflow-y: hidden; line-height: 1.6; text-shadow: 0 0 4px var(--cyber-glow);
-}
-.lock-status { font-size: 1.1rem; color: #fff; font-weight: bold; }
-#percent-val { color: var(--cyber-green); text-shadow: 0 0 10px var(--cyber-glow); }
+/* ИНТЕРФЕЙС */
+.main-wrapper { opacity: 0; pointer-events: none; position: relative; z-index: 5; }
 
-/* ОСНОВНОЙ КОНТЕНТ */
-.main-wrapper { opacity: 0; pointer-events: none; }
-
-/* ГЕРОЙ ЭКРАН */
 .hero-section {
   height: 100vh; display: flex; align-items: center; justify-content: center;
   position: relative; text-align: center; padding: 0 20px;
@@ -130,7 +112,6 @@ body {
 .tech-stack-line span { color: #fff; font-weight: bold; }
 .accent-dot { color: var(--cyber-green); margin: 0 12px; }
 
-/* ГИГАНТСКАЯ ФОНОВАЯ СТРОКА */
 .bg-marquee-container {
   width: 100vw; overflow: hidden; position: absolute; z-index: -1; transform: translateY(-50%);
   opacity: 0.02; pointer-events: none;
@@ -141,7 +122,6 @@ body {
 }
 @keyframes giantLoop { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
 
-/* МАНИФЕСТ СЕКЦИЯ */
 .manifesto-section { padding: 25vh 0; border-top: 1px solid rgba(255,255,255,0.03); }
 .grid-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 50px; }
 .sticky-title { position: relative; }
@@ -154,7 +134,6 @@ body {
 }
 .manifesto-paragraph:last-child { margin-bottom: 0; }
 
-/* ВСТРЕЧНЫЕ СТРОКИ */
 .split-marquee {
   overflow: hidden; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);
   padding: 30px 0; background: rgba(1, 1, 3, 0.7); transform: rotate(-1.5deg) scale(1.03); margin-bottom: 15vh;
@@ -167,7 +146,6 @@ body {
 @keyframes runForward { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
 @keyframes runBackward { 0% { transform: translateX(-50%); } 100% { transform: translateX(0%); } }
 
-/* СЕКЦИЯ СТЕКА (3D КАРТОЧКИ) */
 .skills-section { padding: 10vh 0; }
 .premium-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 35px; margin-top: 60px; }
 .tilt-card {
@@ -187,7 +165,6 @@ body {
 .tilt-card h3 { font-family: var(--font-display); font-size: 2.2rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
 .tilt-card p { font-size: 1.05rem; line-height: 1.6; color: var(--text-dim); }
 
-/* КЕЙСЫ СЕКЦИЯ */
 .cases-section { padding: 15vh 0; }
 .glow-list { display: flex; flex-direction: column; gap: 40px; margin-top: 60px; }
 .glow-item {
@@ -211,7 +188,6 @@ body {
 .t-tag { font-family: var(--font-mono); font-size: 0.8rem; padding: 6px 16px; border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; color: #fff; background: rgba(255,255,255,0.02); transition: all 0.3s; }
 .glow-item:hover .t-tag { border-color: var(--cyber-green); color: var(--cyber-green); background: rgba(0,255,136,0.03); }
 
-/* ПОДВАЛ */
 .main-footer { padding: 20vh 0; border-top: 1px solid rgba(255,255,255,0.03); position: relative; text-align: center; }
 .status-active { color: var(--cyber-green); font-size: 0.9rem; margin-bottom: 25px; text-shadow: 0 0 8px var(--cyber-glow); }
 .main-footer h2 { font-family: var(--font-display); font-size: clamp(2.5rem, 7vw, 5.5rem); text-transform: uppercase; margin-bottom: 50px; line-height: 1.1; }
@@ -223,7 +199,6 @@ body {
 }
 .cyber-btn:hover { background: var(--cyber-green); box-shadow: 0 0 50px var(--cyber-glow); transform: scale(1.03); }
 
-/* ОПТИМИЗАЦИЯ ПОД МОБИЛЬНЫЕ УСТРОЙСТВА */
 @media (max-width: 992px) {
   .grid-layout { grid-template-columns: 1fr; gap: 30px; }
   .split-marquee { transform: rotate(0deg) scale(1); margin-bottom: 10vh; }
@@ -232,13 +207,11 @@ body {
 }
 @media (max-width: 768px) {
   .container { padding: 0 6%; }
-  .hero-section { align-items: center; justify-content: center; }
   .title-main { -webkit-text-stroke: 1px var(--text-pure); }
   .tilt-card { padding: 35px 25px; }
   .glow-item { padding: 30px 20px; }
   .cyber-btn { width: 100%; padding: 20px 30px; font-size: 1.2rem; }
 }
 
-/* Эффекты GSAP */
 .scroll-reveal { opacity: 0; transform: translateY(40px); }
 .animate-blur { filter: blur(15px); opacity: 0; transform: translateY(30px); }
