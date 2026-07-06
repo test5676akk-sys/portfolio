@@ -67,7 +67,8 @@ body {
 /* ПРЕЛОАДЕР */
 .preloader {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  background: #010102; z-index: 9999; display: flex; justify-content: center; align-items: center;
+  background: transparent; /* Изменил на transparent */
+  z-index: 9999; display: flex; justify-content: center; align-items: center;
 }
 .preloader-wrapper { width: 100%; max-width: 650px; padding: 30px; text-align: center; }
 .glitch-title {

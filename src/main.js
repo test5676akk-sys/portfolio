@@ -163,45 +163,25 @@ function bindScrollStages() {
   registerStage('#sec-footer', 'footer');
 }
 
-// 6. ХАКЕРСКИЕ ЛОГИ И ИСПРАВЛЕННЫЙ ЗАПУСК
+// 6. ЧИСТЫЙ ЗАПУСК И СБОРКА ИМЕНИ
 const authBtn = document.getElementById('auth-btn');
-const triggerStage = document.getElementById('trigger-stage'); // ИСПРАВЛЕНО: раньше было auth-block
-const matrixStage = document.getElementById('matrix-stage');
-const termLogs = document.getElementById('term-logs');
-const percentVal = document.getElementById('percent-val');
-
-const systemLogs = [
-  "CONNECTING TO RPC NODE: https://api.mainnet-beta.solana.com...",
-  "EXTRACTING SMART-CONTRACT STRUCTS... OK",
-  "DECRYPTING EASYTOPAY MERCHANT WEBHOOK GATEWAY...",
-  "INITIALIZING C# CORE RUNTIME AND MS SQL COMPILER...",
-  "BYPASSING FRAMEWORKS ARCHITECTURE... AUTONOMY ON",
-  "DEVRUN: ALL INFRASTRUCTURE SYSTEMS STABLE."
-];
+const triggerStage = document.getElementById('trigger-stage');
 
 authBtn.addEventListener('click', () => {
+  // Запускаем трек
   soundtrack.play();
 
-  // Теперь скрывается правильный контейнер
+  // Прячем интерфейс с кнопкой
   gsap.to(triggerStage, { opacity: 0, duration: 0.4, onComplete: () => {
     triggerStage.style.display = 'none';
-    matrixStage.style.display = 'block';
-    gsap.to(matrixStage, { opacity: 1, duration: 0.4 });
+    
+    // Моментально запускаем стягивание частиц в имя "ИЛЬЯ"
     currentStage = 'assemble';
   }});
 
-  let lIdx = 0;
-  const logTimer = setInterval(() => {
-    if (lIdx < systemLogs.length) {
-      termLogs.innerHTML += `> ${systemLogs[lIdx]}<br>`;
-      lIdx++;
-    }
-  }, 700);
-
-  gsap.to({ val: 0 }, {
-    val: 100, duration: 5, ease: 'power2.inOut',
-    onUpdate: function() { percentVal.innerText = `${Math.round(this.targets()[0].val)}%`; },
-    onComplete: () => { clearInterval(logTimer); explosionTransition(); }
+  // Ровно через 5 секунд происходит взрыв и загрузка сайта
+  gsap.delayedCall(5, () => {
+    explosionTransition();
   });
 });
 
