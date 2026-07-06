@@ -2,7 +2,7 @@ import './style.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// 1. ЗВУКОВОЙ ПРОТОКОЛ (HTML5 Audio пробивает мобилки)
+// 1. ЗВУКОВОЙ ПРОТОКОЛ
 const soundtrack = new Howl({
   src: ['/track.mp3'],
   loop: true,
@@ -10,7 +10,7 @@ const soundtrack = new Howl({
   html5: true
 });
 
-// 2. КИНЕМАТОГРАФИЧНЫЙ СКРОЛЛ (LENIS)
+// 2. КИНЕМАТОГРАФИЧНЫЙ СКРОЛЛ
 const lenis = new Lenis({ duration: 1.4, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
 function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
 requestAnimationFrame(raf);
@@ -18,7 +18,6 @@ lenis.on('scroll', ScrollTrigger.update);
 gsap.ticker.add((time)=>{ lenis.raf(time * 1000) });
 gsap.ticker.lagSmoothing(0);
 
-// Скроллбар-лайн
 lenis.on('scroll', (e) => {
   const progress = (e.scroll / (e.limit)) * 100;
   document.querySelector('.scroll-progress-line').style.width = `${progress}%`;
@@ -44,13 +43,12 @@ if (window.matchMedia("(hover: hover)").matches) {
   });
 }
 
-// 4. ГРАФИЧЕСКИЙ ДВИЖОК CANVAS (ЧАСТИЦЫ МАТРИЦЫ)
+// 4. ГРАФИЧЕСКИЙ ДВИЖОК CANVAS
 const canvas = document.getElementById('stage-canvas');
 const ctx = canvas.getContext('2d');
 let w, h, particles = [];
-let currentStage = 'loader'; // stages: loader, assemble, hero, manifesto, skills, cases, footer
+let currentStage = 'loader';
 
-// Заданные координаты для сборки слова "ИЛЬЯ" (Сетка 40x40 точек)
 const nameMatrix = [
   {x:12,y:10},{x:12,y:11},{x:12,y:12},{x:12,y:13},{x:12,y:14},{x:12,y:15},{x:12,y:16},{x:12,y:17},{x:12,y:18},{x:12,y:19},{x:12,y:20},{x:12,y:21},{x:12,y:22},{x:12,y:23},{x:12,y:24},{x:12,y:25},{x:12,y:26},{x:12,y:27},{x:12,y:28},{x:12,y:29},{x:12,y:30}, // И
   {x:13,y:29},{x:14,y:28},{x:15,y:27},{x:16,y:26},{x:17,y:25},{x:18,y:24},{x:19,y:23},{x:20,y:22},{x:21,y:21},{x:22,y:20},{x:23,y:19},{x:24,y:18},{x:25,y:17},{x:26,y:16},{x:27,y:15},{x:28,y:14},{x:29,y:13},{x:30,y:12},{x:31,y:11},{x:32,y:10},
@@ -75,18 +73,15 @@ function initEngine() {
   const count = window.innerWidth < 768 ? 80 : 220;
   
   for (let i = 0; i < count; i++) {
-    // Находим таргет из матрицы слова
     let targetX = null, targetY = null;
     if (i < nameMatrix.length) {
-      // Центрируем слово по координатам
       targetX = (nameMatrix[i].x - 53) * (window.innerWidth < 768 ? 6 : 12) + (w / 2);
       targetY = (nameMatrix[i].y - 20) * (window.innerWidth < 768 ? 6 : 12) + (h / 2);
     }
     
     particles.push({
       x: Math.random() * w, y: Math.random() * h,
-      originX: Math.random() * w, originY: Math.random() * h,
-      tx: targetX, ty: targetY, // Координаты слова
+      tx: targetX, ty: targetY,
       vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2,
       rad: Math.random() * 2.5 + 1, alpha: Math.random() * 0.4 + 0.3
     });
@@ -95,33 +90,25 @@ function initEngine() {
 
 function updateAndRenderStage() {
   requestAnimationFrame(updateAndRenderStage);
-  ctx.clearRect(0, 0, w, height);
+  ctx.clearRect(0, 0, w, h);
 
   particles.forEach((p, idx) => {
-    // СТЕЙДЖ: ХАОТИЧНЫЙ ЛОАДЕР И ВЗРЫВ
     if (currentStage === 'loader') {
       p.x += p.vx; p.y += p.vy;
       if (p.x < 0 || p.x > w) p.vx *= -1;
       if (p.y < 0 || p.y > h) p.vy *= -1;
     }
-    
-    // СТЕЙДЖ: СБОРКА ИМЕНИ "ИЛЬЯ"
     else if (currentStage === 'assemble') {
       if (p.tx !== null) {
         p.x += (p.tx - p.x) * 0.08; p.y += (p.ty - p.y) * 0.08;
       } else {
-        // Остальные частицы создают облако
         p.x += p.vx * 0.2; p.y += p.vy * 0.2;
       }
     }
-    
-    // СТЕЙДЖ 1: HERO (НЕЙРОСЕТЬ И СВЯЗИ)
     else if (currentStage === 'hero') {
       p.x += p.vx * 0.6; p.y += p.vy * 0.6;
       if (p.x < 0 || p.x > w) p.vx *= -1;
       if (p.y < 0 || p.y > h) p.vy *= -1;
-      
-      // Рисуем линии связей (только на десктопах)
       if (window.innerWidth > 768) {
         for (let j = idx + 1; j < particles.length; j++) {
           let dist = Math.hypot(p.x - particles[j].x, p.y - particles[j].y);
@@ -132,29 +119,22 @@ function updateAndRenderStage() {
         }
       }
     }
-    
-    // СТЕЙДЖ 2: MANIFESTO (МОНОЛИТНЫЕ КОЛОННЫ)
     else if (currentStage === 'manifesto') {
       let colX = (idx % 6) * (w / 5) + 50;
       p.x += (colX - p.x) * 0.05;
       p.y += p.vy * 0.8;
       if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
     }
-    
-    // СТЕЙДЖ 3: SKILLS (БЛОКЧЕЙН МАТРИЦА)
     else if (currentStage === 'skills') {
       let gridX = (idx % 15) * (w / 14);
       let gridY = Math.floor(idx / 15) * (h / 12) + 40;
       p.x += (gridX - p.x) * 0.1; p.y += (gridY - p.y) * 0.1;
     }
-    
-    // СТЕЙДЖ 4: CASES & FOOTER (КОМЕТНЫЙ ШЛЕЙФ)
     else if (currentStage === 'cases' || currentStage === 'footer') {
       p.x += (mX - p.x) * (0.02 + (idx * 0.0003));
       p.y += (mY - p.y) * (0.02 + (idx * 0.0003));
     }
 
-    // Рендеринг точки частицы
     ctx.beginPath(); ctx.arc(p.x, p.y, p.rad, 0, Math.PI * 2);
     ctx.fillStyle = currentStage === 'assemble' ? `rgba(0, 255, 136, 0.95)` : `rgba(0, 255, 136, ${p.alpha})`;
     ctx.fill();
@@ -168,7 +148,6 @@ function updateAndRenderStage() {
 }
 initEngine(); updateAndRenderStage(); window.addEventListener('resize', initEngine);
 
-// 5. УПРАВЛЕНИЕ СТЕЙДЖАМИ СКРОЛЛА ЧЕРЕЗ SCROLLTRIGGER
 function bindScrollStages() {
   const registerStage = (id, stageName) => {
     ScrollTrigger.create({
@@ -184,9 +163,9 @@ function bindScrollStages() {
   registerStage('#sec-footer', 'footer');
 }
 
-// 6. ХАКЕРСКИЕ ЛОГИ ЗАГРУЗЧИКА
+// 6. ХАКЕРСКИЕ ЛОГИ И ИСПРАВЛЕННЫЙ ЗАПУСК
 const authBtn = document.getElementById('auth-btn');
-const authBlock = document.getElementById('auth-block');
+const triggerStage = document.getElementById('trigger-stage'); // ИСПРАВЛЕНО: раньше было auth-block
 const matrixStage = document.getElementById('matrix-stage');
 const termLogs = document.getElementById('term-logs');
 const percentVal = document.getElementById('percent-val');
@@ -201,17 +180,16 @@ const systemLogs = [
 ];
 
 authBtn.addEventListener('click', () => {
-  soundtrack.play(); // Старт музыки
+  soundtrack.play();
 
-  // Переключаем фазу прелоадера
-  gsap.to(authBlock, { opacity: 0, duration: 0.4, onComplete: () => {
-    authBlock.style.display = 'none';
+  // Теперь скрывается правильный контейнер
+  gsap.to(triggerStage, { opacity: 0, duration: 0.4, onComplete: () => {
+    triggerStage.style.display = 'none';
     matrixStage.style.display = 'block';
     gsap.to(matrixStage, { opacity: 1, duration: 0.4 });
-    currentStage = 'assemble'; // Переключаем Canvas на сборку имени!
+    currentStage = 'assemble';
   }});
 
-  // Печать логов терминала
   let lIdx = 0;
   const logTimer = setInterval(() => {
     if (lIdx < systemLogs.length) {
@@ -220,7 +198,6 @@ authBtn.addEventListener('click', () => {
     }
   }, 700);
 
-  // Прогресс заполнения вектора (ровно 5000 мс)
   gsap.to({ val: 0 }, {
     val: 100, duration: 5, ease: 'power2.inOut',
     onUpdate: function() { percentVal.innerText = `${Math.round(this.targets()[0].val)}%`; },
@@ -228,41 +205,34 @@ authBtn.addEventListener('click', () => {
   });
 });
 
-// ВЗРЫВ ПРИ ПЕРЕХОДЕ В САЙТ
 function explosionTransition() {
-  // Эффект Большого Взрыва (Big Bang) для частиц Canvas
   particles.forEach(p => {
     let angle = Math.random() * Math.PI * 2;
     let force = Math.random() * 25 + 15;
     p.vx = Math.cos(angle) * force; p.vy = Math.sin(angle) * force;
   });
-  currentStage = 'loader'; // Даем им секунду разлететься по импульсу
+  currentStage = 'loader';
 
-  // Убираем прелоадер
   gsap.to('#preloader', {
     scale: 2, opacity: 0, duration: 1.2, ease: 'expo.inOut',
     onComplete: () => {
       document.getElementById('preloader').remove();
-      currentStage = 'hero'; // Ставим стейдж первого экрана
-      bindScrollStages(); // Активируем триггеры фона
+      currentStage = 'hero';
+      bindScrollStages();
     }
   });
 
-  // Проявляем сайт
   gsap.to('.main-wrapper', { opacity: 1, duration: 0.1, delay: 0.4 });
   document.querySelector('.main-wrapper').style.pointerEvents = 'auto';
 
-  // Анимация интерфейса
   const tl = gsap.timeline({ delay: 0.6 });
   tl.fromTo('.animate-blur', { filter: 'blur(20px)', y: 40, opacity: 0 }, { filter: 'blur(0px)', y: 0, opacity: 1, duration: 1.4, stagger: 0.2, ease: 'power4.out' });
 
-  // Включение триггеров появления текста
   initTextTriggers();
   initTiltCards();
   initDecodeEffect();
 }
 
-// 7. ИНДУСТРИАЛЬНЫЕ ЭФФЕКТЫ КОНТЕНТА
 function initTextTriggers() {
   document.querySelectorAll('.scroll-reveal').forEach(el => {
     gsap.to(el, {
@@ -272,9 +242,8 @@ function initTextTriggers() {
   });
 }
 
-// 3D Tilt Карточки (физика наклона без сторонних библиотек)
 function initTiltCards() {
-  if (window.innerWidth < 768) return; // Выключаем на мобилках
+  if (window.innerWidth < 768) return;
   document.querySelectorAll('.tilt-card').forEach(card => {
     card.addEventListener('mousemove', (e) => {
       const rect = card.getBoundingClientRect();
@@ -288,7 +257,6 @@ function initTiltCards() {
   });
 }
 
-// Эффект кибер-дешифровки текста при наведении
 function initDecodeEffect() {
   const letters = "01XØ$#@%&§?+=*";
   document.querySelectorAll('.DecodeText').forEach(el => {
