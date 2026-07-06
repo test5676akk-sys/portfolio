@@ -43,58 +43,71 @@ if (window.matchMedia("(hover: hover)").matches) {
   });
 }
 
-// 4. ГРАФИЧЕСКИЙ ДВИЖОК CANVAS (ПОВЫШЕННАЯ ПЛОТНОСТЬ ТОЧЕК ИМЕНИ)
+// 4. ГРАФИЧЕСКИЙ ДВИЖОК CANVAS С ПИКСЕЛЬНЫМ СКАНЕРОМ ИМЕНИ
 const canvas = document.getElementById('stage-canvas');
 const ctx = canvas.getContext('2d');
 let w, h, particles = [];
 let currentStage = 'loader';
-let assembleProgress = 0; // Фактор разгона сборки от 0 до 1
+let assembleProgress = 0;
 
-const nameMatrix = [
-  // БУКВА "И" (Сверхплотная калибровка линий)
-  {x:10,y:10},{x:10,y:11},{x:10,y:12},{x:10,y:13},{x:10,y:14},{x:10,y:15},{x:10,y:16},{x:10,y:17},{x:10,y:18},{x:10,y:19},{x:10,y:20},{x:10,y:21},{x:10,y:22},{x:10,y:23},{x:10,y:24},{x:10,y:25},{x:10,y:26},{x:10,y:27},{x:10,y:28},{x:10,y:29},{x:10,y:30},
-  {x:11,y:10},{x:11,y:30},{x:11,y:29},{x:12,y:28},{x:13,y:27},{x:14,y:26},{x:15,y:25},{x:16,y:24},{x:17,y:23},{x:18,y:22},{x:19,y:21},{x:20,y:20},{x:21,y:19},{x:22,y:18},{x:23,y:17},{x:24,y:16},{x:25,y:15},{x:26,y:14},{x:27,y:13},{x:28,y:12},{x:29,y:11},{x:30,y:10},
-  {x:30,y:11},{x:30,y:12},{x:30,y:13},{x:30,y:14},{x:30,y:15},{x:30,y:16},{x:30,y:17},{x:30,y:18},{x:30,y:19},{x:30,y:20},{x:30,y:21},{x:30,y:22},{x:30,y:23},{x:30,y:24},{x:30,y:25},{x:30,y:26},{x:30,y:27},{x:30,y:28},{x:30,y:29},{x:30,y:30},{x:31,y:10},{x:31,y:30},
+// ФУНКЦИЯ: Сканирует текст и возвращает точные пиксельные координаты букв
+function getTextCoordinates(text) {
+  const offCanvas = document.createElement('canvas');
+  const offCtx = offCanvas.getContext('2d');
+  offCanvas.width = w;
+  offCanvas.height = h;
 
-  // БУКВА "Л" (Широкие, геометричные стойки)
-  {x:38,y:12},{x:38,y:13},{x:38,y:14},{x:38,y:15},{x:38,y:16},{x:38,y:17},{x:38,y:18},{x:38,y:19},{x:38,y:20},{x:38,y:21},{x:38,y:22},{x:38,y:23},{x:38,y:24},{x:38,y:25},{x:38,y:26},{x:38,y:27},{x:38,y:28},{x:38,y:29},{x:38,y:30},{x:37,y:30},
-  {x:39,y:11},{x:40,y:10},{x:41,y:10},{x:42,y:10},{x:43,y:11},{x:44,y:12},{x:45,y:13},{x:46,y:14},{x:47,y:15},{x:48,y:16},{x:49,y:17},{x:50,y:18},{x:51,y:19},{x:52,y:20},{x:53,y:21},{x:54,y:22},{x:55,y:23},{x:56,y:24},{x:57,y:25},{x:58,y:26},{x:59,y:27},{x:60,y:28},{x:61,y:29},{x:62,y:30},{x:63,y:30},
+  // Рисуем текст невидимо шрифтом Oswald
+  let fontSize = window.innerWidth < 768 ? 120 : 250;
+  offCtx.font = `900 ${fontSize}px 'Oswald', sans-serif`;
+  offCtx.textAlign = "center";
+  offCtx.textBaseline = "middle";
+  offCtx.fillStyle = "white";
+  offCtx.fillText(text, w / 2, h / 2);
 
-  // БУКВА "Ь" (Идеальное скругление нижнего кольца)
-  {x:70,y:10},{x:70,y:11},{x:70,y:12},{x:70,y:13},{x:70,y:14},{x:70,y:15},{x:70,y:16},{x:70,y:17},{x:70,y:18},{x:70,y:19},{x:70,y:20},{x:70,y:21},{x:70,y:22},{x:70,y:23},{x:70,y:24},{x:70,y:25},{x:70,y:26},{x:70,y:27},{x:70,y:28},{x:70,y:29},{x:70,y:30},
-  {x:71,y:20},{x:72,y:20},{x:73,y:20},{x:74,y:21},{x:75,y:22},{x:76,y:23},{x:76,y:24},{x:76,y:25},{x:76,y:26},{x:75,y:27},{x:74,y:28},{x:73,y:29},{x:72,y:30},{x:71,y:30},
-  {x:71,y:10},{x:72,y:10},
+  const imgData = offCtx.getImageData(0, 0, w, h).data;
+  const coords = [];
 
-  // БУКВА "Я" (Финальный росчерк ножки)
-  {x:84,y:20},{x:84,y:21},{x:84,y:22},{x:84,y:23},{x:84,y:24},{x:84,y:25},{x:84,y:26},{x:84,y:27},{x:84,y:28},{x:84,y:29},{x:84,y:30},
-  {x:85,y:20},{x:86,y:21},{x:87,y:22},{x:88,y:23},{x:89,y:24},{x:90,y:25},{x:91,y:26},{x:92,y:27},{x:93,y:28},{x:94,y:29},{x:95,y:30},
-  {x:85,y:15},{x:86,y:15},{x:87,y:14},{x:88,y:13},{x:89,y:12},{x:88,y:11},{x:87,y:10},{x:86,y:10},{x:85,y:10},{x:84,y:11},{x:84,y:12},{x:84,y:13},{x:84,y:14},{x:84,y:15},
-  {x:85,y:16},{x:86,y:17},{x:87,y:18},{x:88,y:19},{x:89,y:20}
-];
+  // Собираем пиксели с шагом 4-5px для плотной матрицы
+  let step = window.innerWidth < 768 ? 3 : 5;
+  for (let y = 0; y < h; y += step) {
+    for (let x = 0; x < w; x += step) {
+      const alpha = imgData[(y * w + x) * 4 + 3];
+      if (alpha > 128) {
+        coords.push({ x: x, y: y });
+      }
+    }
+  }
+  return coords;
+}
 
 function initEngine() {
   w = canvas.width = window.innerWidth;
   h = canvas.height = window.innerHeight;
+  
+  let nameCoords = getTextCoordinates("ИЛЬЯ");
   particles = [];
   
-  // Увеличиваем массив частиц для плотности прорисовки имени
-  const count = window.innerWidth < 768 ? 200 : 450;
+  // До 1200 частиц для кристально четкого текста
+  let maxParticles = window.innerWidth < 768 ? 600 : 1200;
+  let pCount = Math.min(nameCoords.length, maxParticles);
   
-  for (let i = 0; i < count; i++) {
-    let targetX = null, targetY = null;
-    if (i < nameMatrix.length) {
-      // Идеальное масштабирование имени по центру
-      let scale = window.innerWidth < 768 ? 6.5 : 13.5;
-      targetX = (nameMatrix[i].x - 52) * scale + (w / 2);
-      targetY = (nameMatrix[i].y - 20) * scale + (h / 2);
-    }
+  for (let i = 0; i < pCount; i++) {
+    // Равномерно распределяем частицы по сканированным пикселям букв
+    let target = nameCoords[Math.floor(i * (nameCoords.length / pCount))];
     
     particles.push({
-      x: Math.random() * w, y: Math.random() * h,
-      tx: targetX, ty: targetY,
-      vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3,
-      rad: Math.random() * 2 + 1, alpha: Math.random() * 0.5 + 0.3,
-      angleOffset: Math.random() * Math.PI * 2
+      x: Math.random() * w, 
+      y: Math.random() * h,
+      tx: target ? target.x : w/2, 
+      ty: target ? target.y : h/2,
+      vx: (Math.random() - 0.5) * 3, 
+      vy: (Math.random() - 0.5) * 3,
+      rad: Math.random() * 1.5 + 0.8, 
+      alpha: Math.random() * 0.5 + 0.3,
+      angleOffset: Math.random() * Math.PI * 2,
+      ox: (Math.random() - 0.5) * 2, // Микро-смещение для эффекта живого неона
+      oy: (Math.random() - 0.5) * 2
     });
   }
 }
@@ -110,33 +123,23 @@ function updateAndRenderStage() {
       if (p.y < 0 || p.y > h) p.vy *= -1;
     }
     else if (currentStage === 'assemble') {
-      if (p.tx !== null) {
-        // Прогрессивный разгон сборки букв во времени
-        let speedFactor = 0.03 + (assembleProgress * 0.12);
-        
-        // Магнитное притяжение к вектору буквы
-        p.x += (p.tx - p.x) * speedFactor;
-        p.y += (p.ty - p.y) * speedFactor;
-        
-        // Эффект кибернетической вибрации перед взрывом (нарастает к 5-й секунде)
-        if (assembleProgress > 0.7) {
-          p.x += Math.sin(Date.now() * 0.05 + p.angleOffset) * (assembleProgress * 1.5);
-          p.y += Math.cos(Date.now() * 0.05 + p.angleOffset) * (assembleProgress * 1.5);
-        }
-      } else {
-        // Частицы без целей плавно вращаются туманностью вокруг центра
-        let angle = 0.005;
-        let dx = p.x - w/2; let dy = p.y - h/2;
-        p.x = w/2 + dx * Math.cos(angle) - dy * Math.sin(angle);
-        p.y = h/2 + dx * Math.sin(angle) + dy * Math.cos(angle);
-      }
+      // Экспоненциальный разгон сборки магнитных частиц
+      let speedFactor = 0.04 + (assembleProgress * 0.08);
+      
+      // Сильная вибрация за полсекунды до взрыва
+      let vibX = assembleProgress > 0.8 ? Math.sin(Date.now() * 0.05 + p.angleOffset) * (assembleProgress * 2.5) : 0;
+      let vibY = assembleProgress > 0.8 ? Math.cos(Date.now() * 0.05 + p.angleOffset) * (assembleProgress * 2.5) : 0;
+      
+      p.x += (p.tx + p.ox + vibX - p.x) * speedFactor;
+      p.y += (p.ty + p.oy + vibY - p.y) * speedFactor;
     }
     else if (currentStage === 'hero') {
       p.x += p.vx * 0.6; p.y += p.vy * 0.6;
       if (p.x < 0 || p.x > w) p.vx *= -1;
       if (p.y < 0 || p.y > h) p.vy *= -1;
-      if (window.innerWidth > 768) {
-        for (let j = idx + 1; j < particles.length; j++) {
+      // Отрисовка линий связей нейросети (лимитируем для производительности)
+      if (window.innerWidth > 768 && idx < 150) {
+        for (let j = idx + 1; j < 150; j++) {
           let dist = Math.hypot(p.x - particles[j].x, p.y - particles[j].y);
           if (dist < 120) {
             ctx.beginPath(); ctx.strokeStyle = `rgba(0, 255, 136, ${0.15 * (1 - dist/120)})`;
@@ -151,19 +154,19 @@ function updateAndRenderStage() {
       if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
     }
     else if (currentStage === 'skills') {
-      let gridX = (idx % 15) * (w / 14);
-      let gridY = Math.floor(idx / 15) * (h / 12) + 40;
+      let gridX = (idx % 20) * (w / 19);
+      let gridY = Math.floor(idx / 20) * (h / 15) + 40;
       p.x += (gridX - p.x) * 0.1; p.y += (gridY - p.y) * 0.1;
     }
     else if (currentStage === 'cases' || currentStage === 'footer') {
-      p.x += (mX - p.x) * (0.02 + (idx * 0.0003));
-      p.y += (mY - p.y) * (0.02 + (idx * 0.0003));
+      p.x += (mX - p.x) * (0.015 + (idx * 0.0002));
+      p.y += (mY - p.y) * (0.015 + (idx * 0.0002));
     }
 
     ctx.beginPath(); ctx.arc(p.x, p.y, p.rad, 0, Math.PI * 2);
     
-    // Подсветка букв во время финальной сборки
-    if (currentStage === 'assemble' && p.tx !== null) {
+    // Включение яркого свечения при сборке букв
+    if (currentStage === 'assemble') {
       ctx.fillStyle = `rgba(0, 255, 136, ${0.4 + (assembleProgress * 0.6)})`;
       ctx.shadowBlur = 8 + (assembleProgress * 15); 
       ctx.shadowColor = "var(--cyber-green)";
@@ -175,7 +178,17 @@ function updateAndRenderStage() {
     ctx.fill();
   });
 }
-initEngine(); updateAndRenderStage(); window.addEventListener('resize', initEngine);
+
+// Гарантируем запуск после загрузки шрифтов, чтобы сканер не срисовал стандартный Arial
+let engineRunning = false;
+document.fonts.ready.then(() => {
+  initEngine();
+  if(!engineRunning) {
+    updateAndRenderStage();
+    engineRunning = true;
+  }
+});
+window.addEventListener('resize', initEngine);
 
 function bindScrollStages() {
   const registerStage = (id, stageName) => {
@@ -200,13 +213,13 @@ const flashEffect = document.getElementById('flash-effect');
 authBtn.addEventListener('click', () => {
   soundtrack.play(); // Старт музыки
 
-  // Плавное растворение стартового оверлея
+  // Растворение кнопки
   gsap.to(triggerStage, { opacity: 0, duration: 0.5, onComplete: () => {
     triggerStage.style.display = 'none';
-    currentStage = 'assemble'; // Переключение Canvas на векторную матрицу букв
+    currentStage = 'assemble'; // Активация магнитного сканера
   }});
 
-  // График разгона физики притяжения частиц (нарастает плавно в течение 5.5 секунд)
+  // График напряжения анимации (0 -> 1)
   gsap.to({ progress: 0 }, {
     progress: 1,
     duration: 5.5,
@@ -216,26 +229,26 @@ authBtn.addEventListener('click', () => {
     }
   });
 
-  // ИДЕАЛЬНЫЙ СИНХРОН С ДРОПОМ ТРЕКА НА 6-Й СЕКУНДЕ (5800 мс)
+  // ИДЕАЛЬНЫЙ ТАЙМИНГ ВЗРЫВА (ровно на 5.8 секунд, чтобы на 6.0 был кадр удара)
   gsap.delayedCall(5.8, () => {
     triggerExplosionWithFlash();
   });
 });
 
 function triggerExplosionWithFlash() {
-  // 1. Активируем белый Glow-взрыв по экрану
-  gsap.fromTo(flashEffect, { opacity: 1 }, { opacity: 0, duration: 0.8, ease: "power2.out" });
+  // Эффект белой ослепляющей вспышки экрана
+  gsap.fromTo(flashEffect, { opacity: 1 }, { opacity: 0, duration: 1.2, ease: "power2.out" });
 
-  // 2. Расталкиваем частицы взрывной волной из центра имени
+  // Взрывная волна из центра имени
   particles.forEach(p => {
     let angle = Math.random() * Math.PI * 2;
-    let force = Math.random() * 30 + 20; // Увеличенная сила детонации
+    let force = Math.random() * 40 + 20; 
     p.vx = Math.cos(angle) * force; 
     p.vy = Math.sin(angle) * force;
   });
   currentStage = 'loader';
 
-  // 3. Вышвыриваем прелоадер из дерева
+  // Убираем темный фон лоадера
   gsap.to('#preloader', {
     scale: 2.5, opacity: 0, duration: 1.0, ease: 'expo.out',
     onComplete: () => {
@@ -245,10 +258,11 @@ function triggerExplosionWithFlash() {
     }
   });
 
-  // 4. Проявляем интерфейс портфолио
+  // Проявляем интерфейс портфолио
   gsap.to('.main-wrapper', { opacity: 1, duration: 0.1, delay: 0.2 });
   document.querySelector('.main-wrapper').style.pointerEvents = 'auto';
 
+  // Массовое появление текстов
   const tl = gsap.timeline({ delay: 0.4 });
   tl.fromTo('.animate-blur', { filter: 'blur(20px)', y: 40, opacity: 0 }, { filter: 'blur(0px)', y: 0, opacity: 1, duration: 1.4, stagger: 0.2, ease: 'power4.out' });
 
@@ -257,12 +271,10 @@ function triggerExplosionWithFlash() {
   initDecodeEffect();
 }
 
+// ... инициализации scrollTrigger остаются прежними
 function initTextTriggers() {
   document.querySelectorAll('.scroll-reveal').forEach(el => {
-    gsap.to(el, {
-      y: 0, opacity: 1, duration: 1.2, ease: 'power3.out',
-      scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none reverse' }
-    });
+    gsap.to(el, { y: 0, opacity: 1, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none reverse' }});
   });
 }
 
@@ -275,9 +287,7 @@ function initTiltCards() {
       const y = e.clientY - rect.top - (rect.height/2);
       gsap.to(card, { rotateX: -y / 10, rotateY: x / 10, duration: 0.3 });
     });
-    card.addEventListener('mouseleave', () => {
-      gsap.to(card, { rotateX: 0, rotateY: 0, duration: 0.5 });
-    });
+    card.addEventListener('mouseleave', () => gsap.to(card, { rotateX: 0, rotateY: 0, duration: 0.5 }));
   });
 }
 
