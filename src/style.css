@@ -1,9 +1,9 @@
 :root {
-  --bg-pure: #030305;
-  --text-pure: #f5f5f7;
-  --text-dim: #8e8e9f;
-  --cyber-green: #00ff88;
-  --cyber-glow: rgba(0, 255, 136, 0.45);
+  --bg-pure: #030408; /* Слегка синеватый глубокий черный */
+  --text-pure: #ffffff;
+  --text-dim: #9aa0b1;
+  --cyber-green: #00d4ff; /* Роскошный циановый цвет вместо кислотно-зеленого */
+  --cyber-glow: rgba(0, 212, 255, 0.45);
   --font-mono: 'JetBrains Mono', monospace;
   --font-display: 'Oswald', sans-serif;
   --font-content: 'Manrope', sans-serif;
@@ -24,7 +24,7 @@ body {
 
 .scroll-progress-line {
   position: fixed; top: 0; left: 0; width: 0%; height: 3px;
-  background: var(--cyber-green); box-shadow: 0 0 10px var(--cyber-green);
+  background: var(--cyber-green); box-shadow: 0 0 15px var(--cyber-green);
   z-index: 10001; pointer-events: none;
 }
 
@@ -51,12 +51,12 @@ body {
   transform: translate(-50%, -50%); box-shadow: 0 0 12px var(--cyber-green);
 }
 .cursor-follower {
-  position: fixed; width: 36px; height: 36px; border: 1px solid rgba(0, 255, 136, 0.25);
+  position: fixed; width: 36px; height: 36px; border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 50%; pointer-events: none; z-index: 10004;
   transform: translate(-50%, -50%); transition: width 0.3s ease, height 0.3s ease, background 0.3s ease, border-color 0.3s ease;
 }
 .cursor-expanded {
-  width: 75px; height: 75px; background: rgba(0, 255, 136, 0.04);
+  width: 75px; height: 75px; background: rgba(0, 212, 255, 0.05);
   border-color: var(--cyber-green); backdrop-filter: blur(3px);
 }
 
@@ -75,19 +75,19 @@ body {
   font-family: var(--font-display); font-size: clamp(2.5rem, 7vw, 5.5rem);
   text-transform: uppercase; letter-spacing: 4px; line-height: 1; margin-bottom: 15px;
 }
-.scanline { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; }
+.scanline { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; }
 
 #auth-btn {
   background: transparent; color: var(--cyber-green); border: 1px solid var(--cyber-green);
-  padding: 18px 45px; font-family: var(--font-mono); font-size: 1.1rem; margin-top: 35px;
-  letter-spacing: 1px; transition: all 0.3s ease; position: relative; z-index: 1; overflow: hidden;
+  padding: 20px 50px; font-family: var(--font-mono); font-size: 1.1rem; margin-top: 35px;
+  letter-spacing: 2px; transition: all 0.3s ease; position: relative; z-index: 1; overflow: hidden;
 }
 #auth-btn::before {
   content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
   background: var(--cyber-green); transition: left 0.3s ease; z-index: -1;
 }
 #auth-btn:hover::before { left: 0; }
-#auth-btn:hover { color: #000; box-shadow: 0 0 35px var(--cyber-glow); }
+#auth-btn:hover { color: #000; font-weight: bold; box-shadow: 0 0 40px var(--cyber-glow); }
 
 /* ИНТЕРФЕЙС */
 .main-wrapper { opacity: 0; pointer-events: none; position: relative; z-index: 5; }
@@ -137,7 +137,7 @@ body {
 
 .split-marquee {
   overflow: hidden; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);
-  padding: 30px 0; background: rgba(1, 1, 3, 0.7); transform: rotate(-1.5deg) scale(1.03); margin-bottom: 15vh;
+  padding: 30px 0; background: rgba(3, 4, 8, 0.7); transform: rotate(-1.5deg) scale(1.03); margin-bottom: 15vh;
 }
 .marquee-line { display: flex; white-space: nowrap; font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 3.2rem); font-weight: 700; text-transform: uppercase; }
 .row-forward div { animation: runForward 28s linear infinite; }
@@ -150,7 +150,7 @@ body {
 .skills-section { padding: 10vh 0; }
 .premium-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 35px; margin-top: 60px; }
 .tilt-card {
-  position: relative; background: rgba(8, 8, 12, 0.4); border-radius: 16px;
+  position: relative; background: rgba(8, 9, 14, 0.4); border-radius: 16px;
   overflow: hidden; padding: 45px 35px; transform-style: preserve-3d;
   transition: box-shadow 0.3s ease; border: 1px solid rgba(255,255,255,0.03);
   backdrop-filter: blur(15px);
@@ -169,7 +169,7 @@ body {
 .cases-section { padding: 15vh 0; }
 .glow-list { display: flex; flex-direction: column; gap: 40px; margin-top: 60px; }
 .glow-item {
-  position: relative; background: rgba(5, 5, 8, 0.5); border: 1px solid rgba(255,255,255,0.03);
+  position: relative; background: rgba(5, 6, 10, 0.5); border: 1px solid rgba(255,255,255,0.03);
   border-radius: 20px; padding: 50px 60px; backdrop-filter: blur(10px);
   transition: padding-left 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s;
 }
@@ -178,16 +178,16 @@ body {
   background: var(--cyber-green); box-shadow: 0 0 10px var(--cyber-green);
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.glow-item:hover { padding-left: 80px; background: rgba(0, 255, 136, 0.01); border-color: rgba(0,255,136,0.15); }
+.glow-item:hover { padding-left: 80px; background: rgba(0, 212, 255, 0.02); border-color: rgba(0,212,255,0.2); }
 .glow-item:hover .glow-line-top { width: 100%; }
 
 .meta-row { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.9rem; color: var(--cyber-green); margin-bottom: 20px; }
-.year-badge { background: rgba(0, 255, 136, 0.07); padding: 4px 12px; border-radius: 30px; border: 1px solid rgba(0,255,136,0.2); }
+.year-badge { background: rgba(0, 212, 255, 0.07); padding: 4px 12px; border-radius: 30px; border: 1px solid rgba(0,212,255,0.2); }
 .glow-item h3 { font-family: var(--font-display); font-size: clamp(1.8rem, 3.5vw, 2.8rem); text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1px; }
 .glow-item p { font-size: 1.15rem; line-height: 1.7; color: var(--text-dim); max-width: 1000px; margin-bottom: 35px; }
 .tag-pool { display: flex; gap: 12px; flex-wrap: wrap; }
 .t-tag { font-family: var(--font-mono); font-size: 0.8rem; padding: 6px 16px; border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; color: #fff; background: rgba(255,255,255,0.02); transition: all 0.3s; }
-.glow-item:hover .t-tag { border-color: var(--cyber-green); color: var(--cyber-green); background: rgba(0,255,136,0.03); }
+.glow-item:hover .t-tag { border-color: var(--cyber-green); color: var(--cyber-green); background: rgba(0,212,255,0.05); }
 
 .main-footer { padding: 20vh 0; border-top: 1px solid rgba(255,255,255,0.03); position: relative; text-align: center; }
 .status-active { color: var(--cyber-green); font-size: 0.9rem; margin-bottom: 25px; text-shadow: 0 0 8px var(--cyber-glow); }

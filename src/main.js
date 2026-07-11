@@ -43,71 +43,57 @@ if (window.matchMedia("(hover: hover)").matches) {
   });
 }
 
-// 4. ГРАФИЧЕСКИЙ ДВИЖОК CANVAS С ПИКСЕЛЬНЫМ СКАНЕРОМ ИМЕНИ
+// 4. ГРАФИЧЕСКИЙ ДВИЖОК CANVAS (ГЕНЕРАЦИЯ 3D ДНК)
 const canvas = document.getElementById('stage-canvas');
 const ctx = canvas.getContext('2d');
 let w, h, particles = [];
 let currentStage = 'loader';
 let assembleProgress = 0;
-
-// ФУНКЦИЯ: Сканирует текст и возвращает точные пиксельные координаты букв
-function getTextCoordinates(text) {
-  const offCanvas = document.createElement('canvas');
-  const offCtx = offCanvas.getContext('2d');
-  offCanvas.width = w;
-  offCanvas.height = h;
-
-  // Рисуем текст невидимо шрифтом Oswald
-  let fontSize = window.innerWidth < 768 ? 120 : 250;
-  offCtx.font = `900 ${fontSize}px 'Oswald', sans-serif`;
-  offCtx.textAlign = "center";
-  offCtx.textBaseline = "middle";
-  offCtx.fillStyle = "white";
-  offCtx.fillText(text, w / 2, h / 2);
-
-  const imgData = offCtx.getImageData(0, 0, w, h).data;
-  const coords = [];
-
-  // Собираем пиксели с шагом 4-5px для плотной матрицы
-  let step = window.innerWidth < 768 ? 3 : 5;
-  for (let y = 0; y < h; y += step) {
-    for (let x = 0; x < w; x += step) {
-      const alpha = imgData[(y * w + x) * 4 + 3];
-      if (alpha > 128) {
-        coords.push({ x: x, y: y });
-      }
-    }
-  }
-  return coords;
-}
+let dnaBases = [];
 
 function initEngine() {
   w = canvas.width = window.innerWidth;
   h = canvas.height = window.innerHeight;
-  
-  let nameCoords = getTextCoordinates("ИЛЬЯ");
   particles = [];
+  dnaBases = [];
   
-  // До 1200 частиц для кристально четкого текста
-  let maxParticles = window.innerWidth < 768 ? 600 : 1200;
-  let pCount = Math.min(nameCoords.length, maxParticles);
+  // Параметры ДНК
+  let numStrandDots = window.innerWidth < 768 ? 180 : 350;
+  let numRungs = window.innerWidth < 768 ? 16 : 28;
+  let dotsPerRung = window.innerWidth < 768 ? 8 : 15;
   
-  for (let i = 0; i < pCount; i++) {
-    // Равномерно распределяем частицы по сканированным пикселям букв
-    let target = nameCoords[Math.floor(i * (nameCoords.length / pCount))];
-    
+  let height = h * 0.9;
+  let startY = -height/2;
+  let freq = 0.012; // Частота закручивания спирали
+  
+  // Генерация спиралей (2 цепи)
+  for(let i=0; i<numStrandDots; i++) {
+    let y = startY + (i / numStrandDots) * height;
+    let angle = y * freq;
+    dnaBases.push({ y: y, angle: angle, isRung: false }); // Первая цепь
+    dnaBases.push({ y: y, angle: angle + Math.PI, isRung: false }); // Вторая цепь
+  }
+  
+  // Генерация мостиков между цепями
+  for(let i=0; i<=numRungs; i++) {
+    let y = startY + (i / numRungs) * height;
+    let angle = y * freq;
+    for(let j=0; j<dotsPerRung; j++) {
+       let lerp = (j / dotsPerRung) * 2 - 1; // От -1 до 1
+       dnaBases.push({ y: y, angle: angle, lerp: lerp, isRung: true });
+    }
+  }
+
+  // Привязываем частицы к точкам базы ДНК
+  for (let i = 0; i < dnaBases.length; i++) {
     particles.push({
       x: Math.random() * w, 
       y: Math.random() * h,
-      tx: target ? target.x : w/2, 
-      ty: target ? target.y : h/2,
+      base: dnaBases[i],
       vx: (Math.random() - 0.5) * 3, 
       vy: (Math.random() - 0.5) * 3,
-      rad: Math.random() * 1.5 + 0.8, 
-      alpha: Math.random() * 0.5 + 0.3,
-      angleOffset: Math.random() * Math.PI * 2,
-      ox: (Math.random() - 0.5) * 2, // Микро-смещение для эффекта живого неона
-      oy: (Math.random() - 0.5) * 2
+      rad: Math.random() * 1.5 + 1.2, 
+      alpha: Math.random() * 0.5 + 0.3
     });
   }
 }
@@ -115,42 +101,65 @@ function initEngine() {
 function updateAndRenderStage() {
   requestAnimationFrame(updateAndRenderStage);
   ctx.clearRect(0, 0, w, h);
+  let time = Date.now() * 0.001; // Глобальное время для вращения
 
   particles.forEach((p, idx) => {
+    let scale = 1; // По умолчанию плоские
+
     if (currentStage === 'loader') {
       p.x += p.vx; p.y += p.vy;
       if (p.x < 0 || p.x > w) p.vx *= -1;
       if (p.y < 0 || p.y > h) p.vy *= -1;
     }
     else if (currentStage === 'assemble') {
-      // Экспоненциальный разгон сборки магнитных частиц
-      let speedFactor = 0.04 + (assembleProgress * 0.08);
+      let b = p.base;
+      let currentAngle = b.angle + (time * 0.8); // ДНК медленно вращается вокруг оси
+      let targetX, targetY, targetZ;
+      let dnaRadius = w < 768 ? 50 : 110;
+
+      if(b.isRung) {
+          targetX = Math.sin(currentAngle) * (dnaRadius * b.lerp);
+          targetZ = Math.cos(currentAngle) * (dnaRadius * b.lerp);
+      } else {
+          targetX = Math.sin(currentAngle) * dnaRadius;
+          targetZ = Math.cos(currentAngle) * dnaRadius;
+      }
       
-      // Сильная вибрация за полсекунды до взрыва
-      let vibX = assembleProgress > 0.8 ? Math.sin(Date.now() * 0.05 + p.angleOffset) * (assembleProgress * 2.5) : 0;
-      let vibY = assembleProgress > 0.8 ? Math.cos(Date.now() * 0.05 + p.angleOffset) * (assembleProgress * 2.5) : 0;
+      // Наклоняем всю ДНК по диагонали (-45 градусов для эффекта как на фото)
+      let tilt = -Math.PI / 5;
+      let rotX = targetX * Math.cos(tilt) - b.y * Math.sin(tilt);
+      let rotY = targetX * Math.sin(tilt) + b.y * Math.cos(tilt);
       
-      p.x += (p.tx + p.ox + vibX - p.x) * speedFactor;
-      p.y += (p.ty + p.oy + vibY - p.y) * speedFactor;
+      // Вычисляем финальные координаты на экране
+      let finalX = (w / 2) + rotX;
+      let finalY = (h / 2) + rotY;
+      
+      // Псевдо-3D глубина (частицы сзади меньше и темнее, спереди ярче)
+      scale = (targetZ + 300) / 300; 
+      
+      // Плавное притяжение
+      let speedFactor = 0.03 + (assembleProgress * 0.07);
+      p.x += (finalX - p.x) * speedFactor;
+      p.y += (finalY - p.y) * speedFactor;
     }
     else if (currentStage === 'hero') {
-      p.x += p.vx * 0.6; p.y += p.vy * 0.6;
+      p.x += p.vx * 0.5; p.y += p.vy * 0.5;
       if (p.x < 0 || p.x > w) p.vx *= -1;
       if (p.y < 0 || p.y > h) p.vy *= -1;
-      // Отрисовка линий связей нейросети (лимитируем для производительности)
+      // Связи нейросети на главном экране
       if (window.innerWidth > 768 && idx < 150) {
         for (let j = idx + 1; j < 150; j++) {
           let dist = Math.hypot(p.x - particles[j].x, p.y - particles[j].y);
-          if (dist < 120) {
-            ctx.beginPath(); ctx.strokeStyle = `rgba(0, 255, 136, ${0.15 * (1 - dist/120)})`;
+          if (dist < 130) {
+            ctx.beginPath(); ctx.strokeStyle = `rgba(0, 212, 255, ${0.15 * (1 - dist/130)})`;
             ctx.lineWidth = 0.5; ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
           }
         }
       }
     }
     else if (currentStage === 'manifesto') {
-      let colX = (idx % 6) * (w / 5) + 50;
-      p.x += (colX - p.x) * 0.05; p.y += p.vy * 0.8;
+      let colX = (idx % 8) * (w / 7) + 50;
+      p.x += (colX - p.x) * 0.04; p.y += p.vy * 0.6;
       if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
     }
     else if (currentStage === 'skills') {
@@ -163,32 +172,24 @@ function updateAndRenderStage() {
       p.y += (mY - p.y) * (0.015 + (idx * 0.0002));
     }
 
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.rad, 0, Math.PI * 2);
+    // Отрисовка с учетом 3D перспективы
+    ctx.beginPath(); 
+    ctx.arc(p.x, p.y, Math.max(0.1, p.rad * scale), 0, Math.PI * 2);
     
-    // Включение яркого свечения при сборке букв
     if (currentStage === 'assemble') {
-      ctx.fillStyle = `rgba(0, 255, 136, ${0.4 + (assembleProgress * 0.6)})`;
-      ctx.shadowBlur = 8 + (assembleProgress * 15); 
-      ctx.shadowColor = "var(--cyber-green)";
+      let baseAlpha = 0.3 + (assembleProgress * 0.7);
+      ctx.fillStyle = `rgba(0, 212, 255, ${Math.max(0.1, scale * baseAlpha)})`;
+      ctx.shadowBlur = 12 * scale * assembleProgress; 
+      ctx.shadowColor = "rgba(0, 212, 255, 0.8)";
     } else {
-      ctx.fillStyle = `rgba(0, 255, 136, ${p.alpha})`;
+      ctx.fillStyle = `rgba(0, 212, 255, ${p.alpha})`;
       ctx.shadowBlur = 0;
     }
     
     ctx.fill();
   });
 }
-
-// Гарантируем запуск после загрузки шрифтов, чтобы сканер не срисовал стандартный Arial
-let engineRunning = false;
-document.fonts.ready.then(() => {
-  initEngine();
-  if(!engineRunning) {
-    updateAndRenderStage();
-    engineRunning = true;
-  }
-});
-window.addEventListener('resize', initEngine);
+initEngine(); updateAndRenderStage(); window.addEventListener('resize', initEngine);
 
 function bindScrollStages() {
   const registerStage = (id, stageName) => {
@@ -205,50 +206,50 @@ function bindScrollStages() {
   registerStage('#sec-footer', 'footer');
 }
 
-// 6. ХАКЕРСКИЙ ЗАПУСК И СБОРКА ИМЕНИ ПОД ДРОП
+// 6. ЗАПУСК ДНК И ВЗРЫВ ПОД ДРОП
 const authBtn = document.getElementById('auth-btn');
 const triggerStage = document.getElementById('trigger-stage');
 const flashEffect = document.getElementById('flash-effect');
 
 authBtn.addEventListener('click', () => {
-  soundtrack.play(); // Старт музыки
+  soundtrack.play(); // Запуск аудио
 
   // Растворение кнопки
   gsap.to(triggerStage, { opacity: 0, duration: 0.5, onComplete: () => {
     triggerStage.style.display = 'none';
-    currentStage = 'assemble'; // Активация магнитного сканера
+    currentStage = 'assemble'; // Начинаем сборку ДНК
   }});
 
-  // График напряжения анимации (0 -> 1)
+  // Наращиваем силу притяжения частиц в течение 5.5 сек
   gsap.to({ progress: 0 }, {
     progress: 1,
     duration: 5.5,
-    ease: "power1.in",
+    ease: "power1.inOut",
     onUpdate: function() {
       assembleProgress = this.targets()[0].progress;
     }
   });
 
-  // ИДЕАЛЬНЫЙ ТАЙМИНГ ВЗРЫВА (ровно на 5.8 секунд, чтобы на 6.0 был кадр удара)
+  // ВЗРЫВ РОВНО НА 5.8 СЕКУНДЕ
   gsap.delayedCall(5.8, () => {
     triggerExplosionWithFlash();
   });
 });
 
 function triggerExplosionWithFlash() {
-  // Эффект белой ослепляющей вспышки экрана
+  // Эффект ослепляющей фотовспышки
   gsap.fromTo(flashEffect, { opacity: 1 }, { opacity: 0, duration: 1.2, ease: "power2.out" });
 
-  // Взрывная волна из центра имени
+  // Взрывная волна частиц во все стороны
   particles.forEach(p => {
     let angle = Math.random() * Math.PI * 2;
-    let force = Math.random() * 40 + 20; 
+    let force = Math.random() * 45 + 20; 
     p.vx = Math.cos(angle) * force; 
     p.vy = Math.sin(angle) * force;
   });
   currentStage = 'loader';
 
-  // Убираем темный фон лоадера
+  // Убираем черный фон прелоадера
   gsap.to('#preloader', {
     scale: 2.5, opacity: 0, duration: 1.0, ease: 'expo.out',
     onComplete: () => {
@@ -262,7 +263,7 @@ function triggerExplosionWithFlash() {
   gsap.to('.main-wrapper', { opacity: 1, duration: 0.1, delay: 0.2 });
   document.querySelector('.main-wrapper').style.pointerEvents = 'auto';
 
-  // Массовое появление текстов
+  // Анимация размытия для текстов
   const tl = gsap.timeline({ delay: 0.4 });
   tl.fromTo('.animate-blur', { filter: 'blur(20px)', y: 40, opacity: 0 }, { filter: 'blur(0px)', y: 0, opacity: 1, duration: 1.4, stagger: 0.2, ease: 'power4.out' });
 
@@ -271,7 +272,6 @@ function triggerExplosionWithFlash() {
   initDecodeEffect();
 }
 
-// ... инициализации scrollTrigger остаются прежними
 function initTextTriggers() {
   document.querySelectorAll('.scroll-reveal').forEach(el => {
     gsap.to(el, { y: 0, opacity: 1, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none reverse' }});
