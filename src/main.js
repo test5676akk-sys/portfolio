@@ -2,18 +2,23 @@ import './style.css';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// 1. ЗВУКОВОЙ ПРОТОКОЛ
+// 1. АУДИО-ДВИЖОК С ВЫСОКОЙ СОВМЕСТИМОСТЬЮ
 const soundtrack = new Howl({
   src: ['/track.mp3'],
   loop: true,
-  volume: 0.6,
+  volume: 0.55,
   html5: true
 });
 
-// 2. КИНЕМАТОГРАФИЧНЫЙ СКРОЛЛ
-const lenis = new Lenis({ duration: 1.4, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+// 2. ЭЛИТНЫЙ ПЛАВНЫЙ СКРОЛЛ (LENIS)
+const lenis = new Lenis({ 
+  duration: 1.5, 
+  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+  smoothWheel: true 
+});
 function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
 requestAnimationFrame(raf);
+
 lenis.on('scroll', ScrollTrigger.update);
 gsap.ticker.add((time)=>{ lenis.raf(time * 1000) });
 gsap.ticker.lagSmoothing(0);
@@ -23,7 +28,7 @@ lenis.on('scroll', (e) => {
   document.querySelector('.scroll-progress-line').style.width = `${progress}%`;
 });
 
-// 3. АДАПТИВНЫЙ ИНТЕРФЕЙС КУРСОРОВ
+// 4. ИНТЕРФЕЙС УПРАВЛЕНИЯ КУРСОРOM
 const cursor = document.querySelector('.cursor');
 const cursorFollower = document.querySelector('.cursor-follower');
 let mX = window.innerWidth/2, mY = window.innerHeight/2, pX = mX, pY = mY;
@@ -43,57 +48,51 @@ if (window.matchMedia("(hover: hover)").matches) {
   });
 }
 
-// 4. ГРАФИЧЕСКИЙ ДВИЖОК CANVAS (ГЕНЕРАЦИЯ 3D ДНК)
+// 5. КИНЕМАТОГРАФИЧЕСКИЙ ГРАФИЧЕСКИЙ ДВИЖОК (3D DNA HELIX & WAVE NETWORK)
 const canvas = document.getElementById('stage-canvas');
 const ctx = canvas.getContext('2d');
 let w, h, particles = [];
-let currentStage = 'loader';
-let assembleProgress = 0;
-let dnaBases = [];
+let currentStage = 'dna'; // Этапы: dna, morphing, hero, manifesto, skills, cases, footer
+let morphProgress = 0; // Фактор трансформации геометрии от 0 до 1
 
 function initEngine() {
   w = canvas.width = window.innerWidth;
   h = canvas.height = window.innerHeight;
   particles = [];
-  dnaBases = [];
   
-  // Параметры ДНК
-  let numStrandDots = window.innerWidth < 768 ? 180 : 350;
-  let numRungs = window.innerWidth < 768 ? 16 : 28;
-  let dotsPerRung = window.innerWidth < 768 ? 8 : 15;
+  // Создаем массив квантовых частиц (оптимизировано под плавную 3D проекцию)
+  const count = window.innerWidth < 768 ? 250 : 550;
   
-  let height = h * 0.9;
-  let startY = -height/2;
-  let freq = 0.012; // Частота закручивания спирали
-  
-  // Генерация спиралей (2 цепи)
-  for(let i=0; i<numStrandDots; i++) {
-    let y = startY + (i / numStrandDots) * height;
-    let angle = y * freq;
-    dnaBases.push({ y: y, angle: angle, isRung: false }); // Первая цепь
-    dnaBases.push({ y: y, angle: angle + Math.PI, isRung: false }); // Вторая цепь
-  }
-  
-  // Генерация мостиков между цепями
-  for(let i=0; i<=numRungs; i++) {
-    let y = startY + (i / numRungs) * height;
-    let angle = y * freq;
-    for(let j=0; j<dotsPerRung; j++) {
-       let lerp = (j / dotsPerRung) * 2 - 1; // От -1 до 1
-       dnaBases.push({ y: y, angle: angle, lerp: lerp, isRung: true });
-    }
-  }
+  for (let i = 0; i < count; i++) {
+    // 3D Математические параметры для Double Helix (ДНК)
+    let angle = (i / count) * Math.PI * 9; // Витки спирали
+    let distance = window.innerWidth < 768 ? 40 : 90; // Радиус
+    let strand = i % 2 === 0 ? 1 : -1;
+    
+    // Смещение по вертикали
+    let dnaHeight = h * 0.85;
+    let initialY = -dnaHeight / 2 + (i / count) * dnaHeight;
 
-  // Привязываем частицы к точкам базы ДНК
-  for (let i = 0; i < dnaBases.length; i++) {
     particles.push({
-      x: Math.random() * w, 
+      // Текущие координаты
+      x: Math.random() * w,
       y: Math.random() * h,
-      base: dnaBases[i],
-      vx: (Math.random() - 0.5) * 3, 
-      vy: (Math.random() - 0.5) * 3,
-      rad: Math.random() * 1.5 + 1.2, 
-      alpha: Math.random() * 0.5 + 0.3
+      
+      // Локальные параметры 3D ДНК
+      dnaX: Math.sin(angle + (strand * Math.PI)) * distance,
+      dnaY: initialY,
+      dnaZ: Math.cos(angle + (strand * Math.PI)) * distance,
+      angle: angle + (strand * Math.PI),
+      
+      // Векторы волнового поля (для фонового режима)
+      waveSeedX: Math.random() * 100,
+      waveSeedY: Math.random() * 100,
+      waveSpeed: 0.002 + Math.random() * 0.003,
+      
+      // Базовые параметры частицы
+      rad: Math.random() * 1.5 + 1,
+      alpha: Math.random() * 0.4 + 0.3,
+      speed: 0.02 + Math.random() * 0.03
     });
   }
 }
@@ -101,88 +100,78 @@ function initEngine() {
 function updateAndRenderStage() {
   requestAnimationFrame(updateAndRenderStage);
   ctx.clearRect(0, 0, w, h);
-  let time = Date.now() * 0.001; // Глобальное время для вращения
+  let time = Date.now() * 0.0008;
 
   particles.forEach((p, idx) => {
-    let scale = 1; // По умолчанию плоские
+    let targetX, targetY, depthScale = 1;
 
-    if (currentStage === 'loader') {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0 || p.x > w) p.vx *= -1;
-      if (p.y < 0 || p.y > h) p.vy *= -1;
-    }
-    else if (currentStage === 'assemble') {
-      let b = p.base;
-      let currentAngle = b.angle + (time * 0.8); // ДНК медленно вращается вокруг оси
-      let targetX, targetY, targetZ;
-      let dnaRadius = w < 768 ? 50 : 110;
-
-      if(b.isRung) {
-          targetX = Math.sin(currentAngle) * (dnaRadius * b.lerp);
-          targetZ = Math.cos(currentAngle) * (dnaRadius * b.lerp);
-      } else {
-          targetX = Math.sin(currentAngle) * dnaRadius;
-          targetZ = Math.cos(currentAngle) * dnaRadius;
-      }
-      
-      // Наклоняем всю ДНК по диагонали (-45 градусов для эффекта как на фото)
-      let tilt = -Math.PI / 5;
-      let rotX = targetX * Math.cos(tilt) - b.y * Math.sin(tilt);
-      let rotY = targetX * Math.sin(tilt) + b.y * Math.cos(tilt);
-      
-      // Вычисляем финальные координаты на экране
-      let finalX = (w / 2) + rotX;
-      let finalY = (h / 2) + rotY;
-      
-      // Псевдо-3D глубина (частицы сзади меньше и темнее, спереди ярче)
-      scale = (targetZ + 300) / 300; 
-      
-      // Плавное притяжение
-      let speedFactor = 0.03 + (assembleProgress * 0.07);
-      p.x += (finalX - p.x) * speedFactor;
-      p.y += (finalY - p.y) * speedFactor;
-    }
-    else if (currentStage === 'hero') {
-      p.x += p.vx * 0.5; p.y += p.vy * 0.5;
-      if (p.x < 0 || p.x > w) p.vx *= -1;
-      if (p.y < 0 || p.y > h) p.vy *= -1;
-      // Связи нейросети на главном экране
-      if (window.innerWidth > 768 && idx < 150) {
-        for (let j = idx + 1; j < 150; j++) {
-          let dist = Math.hypot(p.x - particles[j].x, p.y - particles[j].y);
-          if (dist < 130) {
-            ctx.beginPath(); ctx.strokeStyle = `rgba(0, 212, 255, ${0.15 * (1 - dist/130)})`;
-            ctx.lineWidth = 0.5; ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
-          }
-        }
-      }
-    }
-    else if (currentStage === 'manifesto') {
-      let colX = (idx % 8) * (w / 7) + 50;
-      p.x += (colX - p.x) * 0.04; p.y += p.vy * 0.6;
-      if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
-    }
-    else if (currentStage === 'skills') {
-      let gridX = (idx % 20) * (w / 19);
-      let gridY = Math.floor(idx / 20) * (h / 15) + 40;
-      p.x += (gridX - p.x) * 0.1; p.y += (gridY - p.y) * 0.1;
-    }
-    else if (currentStage === 'cases' || currentStage === 'footer') {
-      p.x += (mX - p.x) * (0.015 + (idx * 0.0002));
-      p.y += (mY - p.y) * (0.015 + (idx * 0.0002));
-    }
-
-    // Отрисовка с учетом 3D перспективы
-    ctx.beginPath(); 
-    ctx.arc(p.x, p.y, Math.max(0.1, p.rad * scale), 0, Math.PI * 2);
+    // МАТЕМАТИЧЕСКАЯ МОДЕЛЬ 1: 3D ВРАЩАЮЩАЯСЯ СПИРАЛЬ ДНК
+    let rotationAngle = time * 0.7;
+    let rotX = p.dnaX * Math.cos(rotationAngle) - p.dnaZ * Math.sin(rotationAngle);
+    let rotZ = p.dnaX * Math.sin(rotationAngle) + p.dnaZ * Math.cos(rotationAngle);
     
-    if (currentStage === 'assemble') {
-      let baseAlpha = 0.3 + (assembleProgress * 0.7);
-      ctx.fillStyle = `rgba(0, 212, 255, ${Math.max(0.1, scale * baseAlpha)})`;
-      ctx.shadowBlur = 12 * scale * assembleProgress; 
-      ctx.shadowColor = "rgba(0, 212, 255, 0.8)";
+    // Легкий наклон оси ДНК в пространстве для объема
+    let tilt = -Math.PI / 6;
+    let finalDnaX = w / 2 + (rotX * Math.cos(tilt) - p.dnaY * Math.sin(tilt));
+    let finalDnaY = h / 2 + (rotX * Math.sin(tilt) + p.dnaY * Math.cos(tilt));
+    
+    depthScale = (rotZ + 200) / 200; // Перспектива приближения/удаления
+
+    // МАТЕМАТИЧЕСКАЯ МОДЕЛЬ 2: ТЕКУЧИЕ КВАНТОВЫЕ ВОЛНЫ (БЭКГРАУНД)
+    let waveX, waveY;
+
+    if (currentStage === 'hero' || currentStage === 'footer') {
+      // Плавное следование за мышью + мягкие волны
+      let offset = Math.sin(time + p.waveSeedX) * 40;
+      waveX = p.x + (mX - p.x) * (0.01 + (idx * 0.00003)) + offset;
+      waveY = p.y + (mY - p.y) * (0.01 + (idx * 0.00003)) + Math.cos(time + p.waveSeedY) * 40;
+    } 
+    else if (currentStage === 'manifesto') {
+      // Строгие структурные математические синусоиды
+      let freq = 0.003;
+      waveX = (idx % 25) * (w / 24);
+      waveY = (h / 2) + Math.sin(waveX * freq + time * 2 + idx) * (h * 0.25);
+    } 
+    else if (currentStage === 'skills') {
+      // Рассредоточенная цифровая матрица данных
+      waveX = (idx % 20) * (w / 19);
+      waveY = Math.floor(idx / 20) * (h / 25) + (h * 0.15) + Math.sin(time + idx) * 20;
+    } 
+    else {
+      // Базовый дрейф волн
+      waveX = w / 2 + Math.sin(time + p.waveSeedX) * (w * 0.4);
+      waveY = h / 2 + Math.cos(time + p.waveSeedY) * (h * 0.4);
+    }
+
+    // ИНТЕРПОЛЯЦИЯ МЕЖДУ РЕЖИМАМИ (МОРФИНГ ГЕОМЕТРИИ)
+    if (currentStage === 'dna') {
+      targetX = finalDnaX; targetY = finalDnaY;
+    } else if (currentStage === 'morphing') {
+      // Мягкое бесшовное перетекание из ДНК в волну без взрывов
+      targetX = gsap.utils.interpolate(finalDnaX, waveX, morphProgress);
+      targetY = gsap.utils.interpolate(finalDnaY, waveY, morphProgress);
+      depthScale = gsap.utils.interpolate(depthScale, 1, morphProgress);
     } else {
-      ctx.fillStyle = `rgba(0, 212, 255, ${p.alpha})`;
+      targetX = waveX; targetY = waveY;
+      depthScale = 1;
+    }
+
+    // Мягкое сглаживание движения
+    p.x += (targetX - p.x) * 0.06;
+    p.y += (targetY - p.y) * 0.06;
+
+    // ОТРИСОВКА ЧАСТИЦЫ
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.max(0.2, p.rad * depthScale), 0, Math.PI * 2);
+    
+    // Подсветка нитей во время нахождения в форме ДНК
+    if (currentStage === 'dna' || currentStage === 'morphing') {
+      let alphaFactor = currentStage === 'dna' ? 1 : (1 - morphProgress);
+      ctx.fillStyle = `rgba(0, 212, 255, ${Math.max(0.08, p.alpha * depthScale)})`;
+      ctx.shadowBlur = 10 * depthScale * alphaFactor;
+      ctx.shadowColor = "rgba(0, 212, 255, 0.6)";
+    } else {
+      ctx.fillStyle = `rgba(0, 212, 255, ${p.alpha * 0.7})`;
       ctx.shadowBlur = 0;
     }
     
@@ -191,93 +180,86 @@ function updateAndRenderStage() {
 }
 initEngine(); updateAndRenderStage(); window.addEventListener('resize', initEngine);
 
+// Управление геометрией частиц привязано к координатам ScrollTrigger
 function bindScrollStages() {
   const registerStage = (id, stageName) => {
     ScrollTrigger.create({
-      trigger: id, start: 'top 60%', end: 'bottom 40%',
-      onEnter: () => currentStage = stageName,
-      onEnterBack: () => currentStage = stageName
+      trigger: id, start: 'top 65%', end: 'bottom 35%',
+      onEnter: () => { if(currentStage !== 'morphing') currentStage = stageName; },
+      onEnterBack: () => { if(currentStage !== 'morphing') currentStage = stageName; }
     });
   };
   registerStage('#sec-hero', 'hero');
   registerStage('#sec-manifesto', 'manifesto');
   registerStage('#sec-skills', 'skills');
-  registerStage('#sec-cases', 'cases');
+  registerStage('#sec-cases', 'hero'); // Используем плавное следование для кейсов
   registerStage('#sec-footer', 'footer');
 }
 
-// 6. ЗАПУСК ДНК И ВЗРЫВ ПОД ДРОП
+// 6. БЕЗУПРЕЧНЫЙ ПЛАВНЫЙ ПЕРЕХОД ПО КЛИКУ РОДНОГО ТРЕКА
 const authBtn = document.getElementById('auth-btn');
-const triggerStage = document.getElementById('trigger-stage');
-const flashEffect = document.getElementById('flash-effect');
+const preloader = document.getElementById('preloader');
+const mainWrapper = document.querySelector('.main-wrapper');
 
 authBtn.addEventListener('click', () => {
-  soundtrack.play(); // Запуск аудио
+  soundtrack.play(); // Старт трека
 
-  // Растворение кнопки
-  gsap.to(triggerStage, { opacity: 0, duration: 0.5, onComplete: () => {
-    triggerStage.style.display = 'none';
-    currentStage = 'assemble'; // Начинаем сборку ДНК
+  // Элегантное растворение интерфейса прелоадера
+  gsap.to('#trigger-stage', { opacity: 0, duration: 0.8, onComplete: () => {
+    document.getElementById('trigger-stage').style.display = 'none';
+    currentStage = 'morphing'; // Включаем режим плавного перестроения спирали
   }});
 
-  // Наращиваем силу притяжения частиц в течение 5.5 сек
+  // Магия расплетения ДНК: спираль тает и превращается в потоки за 5.8 секунд (под дроп)
   gsap.to({ progress: 0 }, {
     progress: 1,
-    duration: 5.5,
-    ease: "power1.inOut",
+    duration: 5.6,
+    ease: "power2.inOut",
     onUpdate: function() {
-      assembleProgress = this.targets()[0].progress;
-    }
-  });
-
-  // ВЗРЫВ РОВНО НА 5.8 СЕКУНДЕ
-  gsap.delayedCall(5.8, () => {
-    triggerExplosionWithFlash();
-  });
-});
-
-function triggerExplosionWithFlash() {
-  // Эффект ослепляющей фотовспышки
-  gsap.fromTo(flashEffect, { opacity: 1 }, { opacity: 0, duration: 1.2, ease: "power2.out" });
-
-  // Взрывная волна частиц во все стороны
-  particles.forEach(p => {
-    let angle = Math.random() * Math.PI * 2;
-    let force = Math.random() * 45 + 20; 
-    p.vx = Math.cos(angle) * force; 
-    p.vy = Math.sin(angle) * force;
-  });
-  currentStage = 'loader';
-
-  // Убираем черный фон прелоадера
-  gsap.to('#preloader', {
-    scale: 2.5, opacity: 0, duration: 1.0, ease: 'expo.out',
+      morphProgress = this.targets()[0].progress;
+    },
     onComplete: () => {
-      document.getElementById('preloader').remove();
-      currentStage = 'hero';
-      bindScrollStages();
+      currentStage = 'hero'; // Фиксируем фоновое состояние
+      bindScrollStages();    // Включаем скролл-триггеры для фона
     }
   });
 
-  // Проявляем интерфейс портфолио
-  gsap.to('.main-wrapper', { opacity: 1, duration: 0.1, delay: 0.2 });
-  document.querySelector('.main-wrapper').style.pointerEvents = 'auto';
+  // Мягкое проявление основного сайта (синхронно с 6-й секундой начала баса)
+  gsap.to(preloader, {
+    opacity: 0,
+    duration: 1.5,
+    delay: 5.2,
+    ease: "power1.inOut",
+    onComplete: () => preloader.remove()
+  });
 
-  // Анимация размытия для текстов
-  const tl = gsap.timeline({ delay: 0.4 });
-  tl.fromTo('.animate-blur', { filter: 'blur(20px)', y: 40, opacity: 0 }, { filter: 'blur(0px)', y: 0, opacity: 1, duration: 1.4, stagger: 0.2, ease: 'power4.out' });
+  gsap.to(mainWrapper, { opacity: 1, duration: 1.5, delay: 5.4 });
+  mainWrapper.style.pointerEvents = 'auto';
 
+  // Плавный выезд контента из киношного размытия
+  const tl = gsap.timeline({ delay: 5.8 });
+  tl.fromTo('.animate-blur', 
+    { filter: 'blur(20px)', y: 30, opacity: 0 }, 
+    { filter: 'blur(0px)', y: 0, opacity: 1, duration: 1.6, stagger: 0.2, ease: 'power3.out' }
+  );
+
+  // Инициализация триггеров контента
   initTextTriggers();
   initTiltCards();
   initDecodeEffect();
-}
+});
 
+// Анимации проявления блоков при скролле
 function initTextTriggers() {
   document.querySelectorAll('.scroll-reveal').forEach(el => {
-    gsap.to(el, { y: 0, opacity: 1, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none reverse' }});
+    gsap.to(el, {
+      y: 0, opacity: 1, duration: 1.4, ease: 'power2.out',
+      scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none reverse' }
+    });
   });
 }
 
+// Логика 3D наклона карточек услуг
 function initTiltCards() {
   if (window.innerWidth < 768) return;
   document.querySelectorAll('.tilt-card').forEach(card => {
@@ -285,12 +267,15 @@ function initTiltCards() {
       const rect = card.getBoundingClientRect();
       const x = e.clientX - rect.left - (rect.width/2);
       const y = e.clientY - rect.top - (rect.height/2);
-      gsap.to(card, { rotateX: -y / 10, rotateY: x / 10, duration: 0.3 });
+      gsap.to(card, { rotateX: -y / 12, rotateY: x / 12, duration: 0.3 });
     });
-    card.addEventListener('mouseleave', () => gsap.to(card, { rotateX: 0, rotateY: 0, duration: 0.5 }));
+    card.addEventListener('mouseleave', () => {
+      gsap.to(card, { rotateX: 0, rotateY: 0, duration: 0.6 });
+    });
   });
 }
 
+// Эффект премиальной кибер-дешифровки заголовков при наведении
 function initDecodeEffect() {
   const letters = "01XØ$#@%&§?+=*";
   document.querySelectorAll('.DecodeText').forEach(el => {
@@ -303,7 +288,7 @@ function initDecodeEffect() {
         }).join("");
         if (iteration >= el.dataset.text.length) clearInterval(interval);
         iteration += 1 / 2;
-      }, 30);
+      }, 25);
     });
   });
 }
