@@ -24,26 +24,40 @@ body {
 .container { max-width: 1400px; margin: 0 auto; padding: 0 6%; }
 .text-center { text-align: center; }
 
-#stage-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2; pointer-events: none; }
+/* ХОЛСТ И ФОН */
+#stage-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; }
 .noise-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.04; pointer-events: none; z-index: 9995; }
 .scroll-progress-line { position: fixed; top: 0; left: 0; width: 0%; height: 2px; background: var(--accent); z-index: 10001; }
 
+/* КУРСОРЫ */
 .cursor { position: fixed; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 10005; transform: translate(-50%, -50%); }
 .cursor-follower { position: fixed; width: 36px; height: 36px; border: 1px solid rgba(0, 179, 255, 0.4); border-radius: 50%; pointer-events: none; z-index: 10004; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s; }
 .cursor-expanded { width: 70px; height: 70px; background: rgba(0, 179, 255, 0.05); backdrop-filter: blur(2px); border-color: transparent; }
 
-/* ОБНОВЛЕННЫЙ МИНИМАЛИСТИЧНЫЙ ПРЕЛОАДЕР */
+/* ШАПКА САЙТА (Лого и Вкладки) */
+.main-header {
+  position: fixed; top: -100px; left: 0; width: 100vw; padding: 25px 6%;
+  display: flex; justify-content: space-between; align-items: center;
+  z-index: 10000; backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: top 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.header-logo { font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; }
+.header-tabs { display: flex; gap: 40px; list-style: none; }
+.header-tabs a { color: var(--text-main); text-decoration: none; font-family: var(--font-mono); font-size: 0.85rem; transition: color 0.3s; }
+.header-tabs a:hover { color: var(--accent); }
+
+/* ПРЕЛОАДЕР */
 .preloader {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
   background: var(--bg-deep); z-index: 9999; display: flex; justify-content: center; align-items: center;
 }
-.preloader-wrapper { width: 100%; max-width: 750px; padding: 40px; text-align: center; z-index: 10; position: relative; }
+.preloader-wrapper { width: 100%; max-width: 800px; padding: 40px; text-align: center; z-index: 10; position: relative; }
 .preloader-subtitle { color: var(--accent); margin-bottom: 20px; font-weight: bold; letter-spacing: 4px; }
-.preloader-title { font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 800; letter-spacing: -1px; line-height: 1.1; margin-bottom: 45px; color: #ffffff; }
+.preloader-title { font-size: clamp(2.5rem, 7vw, 5rem); font-weight: 800; letter-spacing: -1px; line-height: 1.1; margin-bottom: 45px; color: #ffffff; }
 
 #auth-btn {
-  background: transparent; color: var(--text-main); border: 1px solid rgba(255,255,255,0.15);
-  padding: 18px 45px; font-family: var(--font-mono); font-size: 0.9rem; letter-spacing: 3px;
+  background: transparent; color: var(--text-main); border: 1px solid rgba(255,255,255,0.2);
+  padding: 18px 50px; font-family: var(--font-mono); font-size: 0.95rem; letter-spacing: 3px;
   border-radius: 100px; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 #auth-btn:hover { background: #ffffff; color: var(--bg-deep); border-color: #ffffff; transform: translateY(-2px); box-shadow: 0 15px 30px rgba(255,255,255,0.1); }
@@ -84,6 +98,7 @@ body {
   .grid-layout { grid-template-columns: 1fr; gap: 30px; }
   .service-row { flex-direction: column; }
   .service-num { margin-bottom: 15px; }
+  .header-tabs { display: none; } /* Скрываем вкладки на мобилках для чистоты */
 }
 
 .scroll-reveal { opacity: 0; transform: translateY(40px); }

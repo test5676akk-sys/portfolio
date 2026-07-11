@@ -29,26 +29,25 @@ if (window.matchMedia("(hover: hover)").matches) {
   });
 }
 
-// 4. ГРАФИЧЕСКИЙ ДВИЖОК 3D ЧАСТИЦ (ДНК -> BITCOIN -> ATOMS)
+// 4. ГРАФИЧЕСКИЙ ДВИЖОК 3D ЧАСТИЦ (ДНК -> БИТКОИН -> ВЗРЫВ)
 const canvas = document.getElementById('stage-canvas');
 const ctx = canvas.getContext('2d');
 let w, h, particles = [];
-let currentStage = 'idle'; // idle -> loader_phase -> scatter -> small_bitcoins -> grid -> sphere -> fluid
-let loaderProgress = 0; // От 0 до 1 (0-0.5 = ДНК, 0.5-1 = Биткоин)
+let currentStage = 'idle'; // Фазы: idle -> loader_phase -> scatter -> small_bitcoins -> grid -> sphere -> fluid
+let loaderProgress = 0; // 0..1 (для трансформации ДНК -> Биткоин)
 
 function initEngine() {
   w = canvas.width = window.innerWidth;
   h = canvas.height = window.innerHeight;
   particles = [];
-  const count = window.innerWidth < 768 ? 450 : 850; // Высокая плотность для прорисовки знака ₿
+  const count = window.innerWidth < 768 ? 450 : 850; 
   
   for (let i = 0; i < count; i++) {
     particles.push({
       x: Math.random() * w, y: Math.random() * h,
       vx: 0, vy: 0,
-      id: i,
-      total: count,
-      rad: Math.random() * 1.5 + 0.7,
+      id: i, total: count,
+      rad: Math.random() * 1.5 + 0.8,
       alpha: Math.random() * 0.5 + 0.3,
       seedX: Math.random() * 1000,
       seedY: Math.random() * 1000
@@ -56,18 +55,19 @@ function initEngine() {
   }
 }
 
-// Математические формулы 3D-фигур
+// Математика 3D фигур
 function getTarget(p, stage, time) {
   let tx = w/2, ty = h/2, tz = 0;
 
   if (stage === 'idle') {
+    // Мягкий фон до клика
     tx = w/2 + Math.sin(time * 0.4 + p.seedX) * w * 0.35;
     ty = h/2 + Math.cos(time * 0.4 + p.seedY) * h * 0.35;
     tz = Math.sin(time + p.id) * 80;
   }
   
   else if (stage === 'loader_phase') {
-    // ---- ВЫЧИСЛЕНИЕ МОДЕЛИ ДНК ----
+    // --- ГЕОМЕТРИЯ ДНК ---
     let dnaH = h * 0.75;
     let dnaY = -dnaH/2 + (p.id / p.total) * dnaH;
     let dnaAngle = dnaY * 0.016 + time;
@@ -77,13 +77,13 @@ function getTarget(p, stage, time) {
     let dY = dnaY;
     let dZ = Math.cos(dnaAngle + strand) * dnaRad;
 
-    // ---- ВЫЧИСЛЕНИЕ МОДЕЛИ БИТКОИНА (₿) ----
+    // --- ГЕОМЕТРИЯ БИТКОИНА ---
     let bX = 0, bY = 0, bZ = 0;
     let size = w < 768 ? 80 : 180;
     let pct = p.id / p.total;
 
     if (pct < 0.4) {
-      // Два округлых полукольца знака B
+      // Округлые кольца знака B
       let bAngle = (pct / 0.4) * Math.PI * 1.4 - (Math.PI * 0.7);
       let r = size * 0.45;
       let offY = pct < 0.2 ? -size * 0.22 : size * 0.22;
@@ -91,13 +91,13 @@ function getTarget(p, stage, time) {
       bY = Math.sin(bAngle) * r + offY;
       bZ = Math.sin(time * 2 + p.id) * 15;
     } else if (pct < 0.65) {
-      // Вертикальная левая палочка основания
+      // Вертикальная палочка
       let factor = (pct - 0.4) / 0.25;
       bX = -size * 0.25;
       bY = -size * 0.65 + factor * (size * 1.3);
       bZ = Math.cos(time * 2 + p.id) * 15;
     } else if (pct < 0.85) {
-      // Горизонтальные перекладины (топ, мидл, бот)
+      // Горизонтальные перекладины
       let sub = (pct - 0.65) / 0.2;
       let line = Math.floor(sub * 3);
       let lFactor = (sub * 3) - line;
@@ -105,7 +105,7 @@ function getTarget(p, stage, time) {
       bY = line === 0 ? -size * 0.45 : (line === 1 ? 0 : size * 0.45);
       bZ = Math.sin(time + p.id) * 10;
     } else {
-      // 4 Вертикальные черточки сверху и снизу (двойные линии Биткоина)
+      // Две вертикальные черты сверху и снизу
       let sub = (pct - 0.85) / 0.15;
       let line = Math.floor(sub * 4);
       let lFactor = (sub * 4) - line;
@@ -115,18 +115,18 @@ function getTarget(p, stage, time) {
       bZ = Math.cos(time + p.id) * 10;
     }
 
-    // БЕСШОВНЫЙ МОРФИНГ (0 -> 0.5 плывет к ДНК, 0.5 -> 1 перестраивается в Биткоин)
-    if (loaderProgress < 0.4) {
-      tx = dX; ty = dY; tz = dZ;
-    } else {
-      let tFactor = (loaderProgress - 0.4) / 0.6; // Нормализация от 0 до 1
-      let smoothMix = gsap.parseEase("power2.inOut")(tFactor);
-      tx = gsap.utils.interpolate(dX, bX, smoothMix);
-      ty = gsap.utils.interpolate(dY, bY, smoothMix);
-      tz = gsap.utils.interpolate(dZ, bZ, smoothMix);
+    // ТРАНСФОРМАЦИЯ: 0.0 -> 0.45 (ДНК), 0.45 -> 1.0 (Бесшовное перетекание в Биткоин)
+    let tFactor = 0;
+    if (loaderProgress > 0.45) {
+      tFactor = (loaderProgress - 0.45) / 0.55;
     }
+    let smoothMix = gsap.parseEase("power2.inOut")(tFactor);
+    
+    tx = dX + (bX - dX) * smoothMix;
+    ty = dY + (bY - dY) * smoothMix;
+    tz = dZ + (bZ - dZ) * smoothMix;
 
-    // Вращение всей сцены загрузки
+    // Вращение сцены
     let rA = time * 0.6;
     let nx = tx * Math.cos(rA) - tz * Math.sin(rA);
     let nz = tx * Math.sin(rA) + tz * Math.cos(rA);
@@ -134,7 +134,7 @@ function getTarget(p, stage, time) {
   }
   
   else if (stage === 'small_bitcoins') {
-    // 3 Маленьких парящих знака Биткоина на бэкграунде
+    // 3 Маленьких парящих Биткоина (Главный экран)
     let group = p.id % 3;
     let size = w < 768 ? 35 : 65;
     let pct = (p.id / 3) / (p.total / 3);
@@ -148,16 +148,13 @@ function getTarget(p, stage, time) {
       bX = -size * 0.25;
       bY = -size * 0.65 + ((pct - 0.4) / 0.3) * (size * 1.3);
     } else {
-      bX = Math.sin(time + p.id) * 10;
-      bY = Math.cos(time + p.id) * 10;
+      bX = Math.sin(time + p.id) * 10; bY = Math.cos(time + p.id) * 10;
     }
 
     let offsetX = group === 0 ? -w*0.25 : (group === 1 ? w*0.22 : 0);
     let offsetY = group === 0 ? -h*0.15 : (group === 1 ? h*0.12 : -h*0.25);
 
-    tx = offsetX + bX;
-    ty = offsetY + bY;
-    tz = Math.cos(time * 1.5 + p.id) * 30;
+    tx = offsetX + bX; ty = offsetY + bY; tz = Math.cos(time * 1.5 + p.id) * 30;
 
     let rA = time * 0.5 + group;
     let nx = tx * Math.cos(rA) - tz * Math.sin(rA);
@@ -166,6 +163,7 @@ function getTarget(p, stage, time) {
   }
   
   else if (stage === 'grid') {
+    // 3D Куб Баз Данных (Фокус)
     let gridSize = Math.cbrt(p.total);
     let spacing = w < 768 ? 25 : 45;
     let ix = p.id % Math.floor(gridSize);
@@ -183,9 +181,10 @@ function getTarget(p, stage, time) {
   }
   
   else if (stage === 'sphere') {
+    // Нейро-сфера (Компетенции)
     let phi = Math.acos( -1 + ( 2 * p.id ) / p.total );
     let theta = Math.sqrt( p.total * Math.PI ) * phi;
-    let radius = (w < 768 ? 100 : 200) + Math.sin(time * 2.5 + p.seedX) * 12;
+    let radius = (w < 768 ? 100 : 220) + Math.sin(time * 2.5 + p.seedX) * 12;
     
     tx = radius * Math.cos(theta) * Math.sin(phi);
     ty = radius * Math.sin(theta) * Math.sin(phi);
@@ -197,18 +196,19 @@ function getTarget(p, stage, time) {
   }
   
   else if (stage === 'fluid') {
+    // Квантовое поле (Решения)
     tx = (w/2 - mX) * (p.seedX * 0.006) + Math.sin(time + p.seedX) * 180;
     ty = (h/2 - mY) * (p.seedY * 0.006) + Math.cos(time + p.seedY) * 180;
     tz = Math.sin(time + p.id) * 120;
   }
 
+  // Применяем глобальную перспективу ко всем 3D фигурам
   if (stage !== 'idle') {
     let tilt = -Math.PI / 8;
     let finalY = ty * Math.cos(tilt) - tz * Math.sin(tilt);
     let finalZ = ty * Math.sin(tilt) + tz * Math.cos(tilt);
     return { x: w/2 + tx, y: h/2 + finalY, z: finalZ };
   } 
-  
   return { x: tx, y: ty, z: tz };
 }
 
@@ -238,6 +238,7 @@ function updateAndRenderStage() {
     ctx.arc(p.x, p.y, p.rad * depthScale, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(0, 179, 255, ${p.alpha * depthScale})`;
     
+    // Свечение работает во время загрузки
     if (currentStage === 'loader_phase') {
       ctx.shadowBlur = 8 * depthScale;
       ctx.shadowColor = "rgba(0, 179, 255, 0.7)";
@@ -249,6 +250,7 @@ function updateAndRenderStage() {
 }
 initEngine(); updateAndRenderStage(); window.addEventListener('resize', initEngine);
 
+// 5. ПРИВЯЗКА ФИГУР К СКРОЛЛУ
 function bindScrollStages() {
   const registerStage = (id, stageName) => {
     ScrollTrigger.create({
@@ -267,15 +269,22 @@ function bindScrollStages() {
 const authBtn = document.getElementById('auth-btn');
 
 authBtn.addEventListener('click', () => {
-  soundtrack.play(); // Старт трека
+  soundtrack.play(); 
+  
+  // Принудительно держим юзера на самом верху во время загрузки
+  window.scrollTo(0, 0);
+  document.body.style.overflow = 'hidden'; // Блокируем скролл до взрыва
 
-  // Растворяем стартовую панель
+  // ДЕЛАЕМ ФОН ПРЕЛОАДЕРА ПРОЗРАЧНЫМ, ЧТОБЫ УВИДЕТЬ ХОЛСТ
+  gsap.to('#preloader', { backgroundColor: 'rgba(1, 1, 3, 0)', duration: 0.5 });
+  
+  // Растворяем стартовый текст и запускаем ДНК
   gsap.to('#trigger-stage', { opacity: 0, duration: 0.5, onComplete: () => {
     document.getElementById('trigger-stage').style.display = 'none';
-    currentStage = 'loader_phase'; // Включаем 3D-генератор
+    currentStage = 'loader_phase'; 
   }});
 
-  // Таймлайн морфинга: ДНК -> Биткоин в течение 5.5 секунд
+  // Таймлайн: 0 -> 0.45 (ДНК), 0.45 -> 1.0 (Морфинг в Биткоин) за 5.5 сек
   gsap.to({ progress: 0 }, {
     progress: 1,
     duration: 5.5,
@@ -285,26 +294,32 @@ authBtn.addEventListener('click', () => {
     }
   });
 
-  // ВЗРЫВ ЗНАКА БИТКОИНА «НА АТОМЫ» НА 5.8 СЕКУНДЕ (ПОД ДРОП БАСА)
+  // ВЗРЫВ ЗНАКА БИТКОИНА «НА АТОМЫ» НА 5.8 СЕКУНДЕ
   gsap.delayedCall(5.8, () => {
+    document.body.style.overflow = ''; // Возвращаем скролл
+    
+    // Раскидываем атомы
     particles.forEach(p => {
       let angle = Math.random() * Math.PI * 2;
-      let force = Math.random() * 65 + 25; // Мощный атомный разлет
+      let force = Math.random() * 65 + 25; 
       p.vx = Math.cos(angle) * force; 
       p.vy = Math.sin(angle) * force;
     });
     
     currentStage = 'scatter';
 
-    // Бесшовное растворение маски прелоадера
-    gsap.to('#preloader', { opacity: 0, duration: 1.2, ease: 'power2.out', onComplete: () => {
+    // Удаляем прозрачную пленку прелоадера
+    gsap.to('#preloader', { opacity: 0, duration: 1.0, onComplete: () => {
         document.getElementById('preloader').remove();
         currentStage = 'small_bitcoins'; // Атомы перестраиваются в 3 маленьких Биткоина
         bindScrollStages();
       }
     });
 
-    // Проявление контента из красивого блюра
+    // Опускаем шапку (Header с логотипом)
+    document.getElementById('main-header').style.top = '0';
+
+    // Проявление контента сайта
     gsap.to('.main-wrapper', { opacity: 1, duration: 0.1 });
     document.querySelector('.main-wrapper').style.pointerEvents = 'auto';
 
