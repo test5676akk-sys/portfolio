@@ -1,8 +1,8 @@
 :root {
-  --bg-deep: #010101; /* Идеально черный */
+  --bg-deep: #010103;
   --text-main: #ffffff;
   --text-muted: #7b808f;
-  --accent: #00b3ff; /* Ледяной голубой, очень дорогой оттенок */
+  --accent: #00b3ff;
   --font-mono: 'JetBrains Mono', monospace;
   --font-sans: 'Manrope', sans-serif;
 }
@@ -24,28 +24,31 @@ body {
 .container { max-width: 1400px; margin: 0 auto; padding: 0 6%; }
 .text-center { text-align: center; }
 
-#stage-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; }
+#stage-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2; pointer-events: none; }
 .noise-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.04; pointer-events: none; z-index: 9995; }
 .scroll-progress-line { position: fixed; top: 0; left: 0; width: 0%; height: 2px; background: var(--accent); z-index: 10001; }
 
-/* Курсор: Минималистичная точка и тонкое кольцо */
 .cursor { position: fixed; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 10005; transform: translate(-50%, -50%); }
 .cursor-follower { position: fixed; width: 36px; height: 36px; border: 1px solid rgba(0, 179, 255, 0.4); border-radius: 50%; pointer-events: none; z-index: 10004; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s; }
 .cursor-expanded { width: 70px; height: 70px; background: rgba(0, 179, 255, 0.05); backdrop-filter: blur(2px); border-color: transparent; }
 
-/* ПРЕЛОАДЕР - ТОЛЬКО КНОПКА В ПУСТОТЕ */
+/* ОБНОВЛЕННЫЙ МИНИМАЛИСТИЧНЫЙ ПРЕЛОАДЕР */
 .preloader {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
   background: var(--bg-deep); z-index: 9999; display: flex; justify-content: center; align-items: center;
 }
-#auth-btn {
-  background: transparent; color: var(--text-main); border: 1px solid rgba(255,255,255,0.1);
-  padding: 16px 50px; font-family: var(--font-mono); font-size: 1rem; letter-spacing: 6px;
-  border-radius: 100px; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden; position: relative;
-}
-#auth-btn:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
+.preloader-wrapper { width: 100%; max-width: 750px; padding: 40px; text-align: center; z-index: 10; position: relative; }
+.preloader-subtitle { color: var(--accent); margin-bottom: 20px; font-weight: bold; letter-spacing: 4px; }
+.preloader-title { font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 800; letter-spacing: -1px; line-height: 1.1; margin-bottom: 45px; color: #ffffff; }
 
-/* ИНТЕРФЕЙС */
+#auth-btn {
+  background: transparent; color: var(--text-main); border: 1px solid rgba(255,255,255,0.15);
+  padding: 18px 45px; font-family: var(--font-mono); font-size: 0.9rem; letter-spacing: 3px;
+  border-radius: 100px; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#auth-btn:hover { background: #ffffff; color: var(--bg-deep); border-color: #ffffff; transform: translateY(-2px); box-shadow: 0 15px 30px rgba(255,255,255,0.1); }
+
+/* ИНТЕРФЕЙС САЙТА */
 .main-wrapper { opacity: 0; pointer-events: none; position: relative; z-index: 5; }
 
 .hero-section { height: 100vh; display: flex; align-items: center; position: relative; }
