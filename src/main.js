@@ -29,7 +29,7 @@ if (window.matchMedia("(hover: hover)").matches) {
   });
 }
 
-// 4. ЯДРО 3D ЧАСТИЦ (PRO-LEVEL MATH)
+// 4. ЯДРО 3D ЧАСТИЦ
 const canvas = document.getElementById('stage-canvas');
 const ctx = canvas.getContext('2d');
 let w, h, particles = [];
@@ -43,36 +43,29 @@ function initEngine() {
   
   for (let i = 0; i < count; i++) {
     particles.push({
-      // Фактические координаты на экране
       x: Math.random() * w, y: Math.random() * h,
       vx: 0, vy: 0,
-      
-      // Базовые параметры
       id: i,
       total: count,
-      rad: Math.random() * 1.5 + 0.5,
-      alpha: Math.random() * 0.5 + 0.2,
-      
-      // Рандомные сиды для математики
+      rad: Math.random() * 1.5 + 0.8,
+      alpha: Math.random() * 0.5 + 0.3,
       seedX: Math.random() * 1000,
       seedY: Math.random() * 1000
     });
   }
 }
 
-// Математические формации для вычисления Target (Куда стремится частица)
+// Вычисление математических 3D фигур
 function getTarget(p, stage, time) {
   let tx = w/2, ty = h/2, tz = 0;
 
   if (stage === 'idle') {
-    // Просто хаос до нажатия кнопки
-    tx = w/2 + Math.sin(time + p.seedX) * w * 0.4;
-    ty = h/2 + Math.cos(time + p.seedY) * h * 0.4;
-    tz = 0;
+    // Плавный дрейф до старта
+    tx = w/2 + Math.sin(time * 0.5 + p.seedX) * w * 0.4;
+    ty = h/2 + Math.cos(time * 0.5 + p.seedY) * h * 0.4;
+    tz = Math.sin(time + p.id) * 100;
   }
-  
   else if (stage === 'giant_dna') {
-    // 1 Огромная ДНК
     let height = h * 0.8;
     let yPos = -height/2 + (p.id / p.total) * height;
     let angle = yPos * 0.015;
@@ -83,9 +76,7 @@ function getTarget(p, stage, time) {
     ty = yPos;
     tz = Math.cos(angle + strand + time) * radius;
   }
-  
   else if (stage === 'small_dnas') {
-    // 3 Маленькие ДНК по экрану
     let group = p.id % 3;
     let height = h * 0.4;
     let yPos = -height/2 + ((p.id / 3) / (p.total / 3)) * height;
@@ -100,10 +91,8 @@ function getTarget(p, stage, time) {
     ty = offsetY + yPos;
     tz = Math.cos(angle + strand + time*1.5) * radius;
   }
-  
   else if (stage === 'grid') {
-    // Строгий 3D Куб/Матрица
-    let gridSize = Math.cbrt(p.total); // Корень кубический
+    let gridSize = Math.cbrt(p.total);
     let spacing = w < 768 ? 30 : 50;
     
     let ix = p.id % Math.floor(gridSize);
@@ -114,44 +103,34 @@ function getTarget(p, stage, time) {
     ty = (iy - gridSize/2) * spacing;
     tz = (iz - gridSize/2) * spacing;
 
-    // Вращение куба
     let rotAngle = time * 0.3;
     let nx = tx * Math.cos(rotAngle) - tz * Math.sin(rotAngle);
     let nz = tx * Math.sin(rotAngle) + tz * Math.cos(rotAngle);
     tx = nx; tz = nz;
   }
-  
   else if (stage === 'sphere') {
-    // Пульсирующая сфера
     let phi = Math.acos( -1 + ( 2 * p.id ) / p.total );
     let theta = Math.sqrt( p.total * Math.PI ) * phi;
-    
-    let radius = (w < 768 ? 100 : 200) + Math.sin(time * 3 + p.seedX) * 20; // Пульсация
+    let radius = (w < 768 ? 100 : 220) + Math.sin(time * 2 + p.seedX) * 15;
     
     tx = radius * Math.cos(theta) * Math.sin(phi);
     ty = radius * Math.sin(theta) * Math.sin(phi);
     tz = radius * Math.cos(phi);
 
-    // Вращение
-    let rotX = tx * Math.cos(time) - tz * Math.sin(time);
-    let rotZ = tx * Math.sin(time) + tz * Math.cos(time);
+    let rotX = tx * Math.cos(time * 0.5) - tz * Math.sin(time * 0.5);
+    let rotZ = tx * Math.sin(time * 0.5) + tz * Math.cos(time * 0.5);
     tx = rotX; tz = rotZ;
   }
-
   else if (stage === 'fluid') {
-    // Поле, реагирующее на мышь
-    tx = (w/2 - mX) * (p.seedX * 0.005) + Math.sin(time + p.seedX) * 150;
-    ty = (h/2 - mY) * (p.seedY * 0.005) + Math.cos(time + p.seedY) * 150;
-    tz = Math.sin(time + p.id) * 100;
+    tx = (w/2 - mX) * (p.seedX * 0.006) + Math.sin(time + p.seedX) * 200;
+    ty = (h/2 - mY) * (p.seedY * 0.006) + Math.cos(time + p.seedY) * 200;
+    tz = Math.sin(time + p.id) * 150;
   }
 
-  // Если это не хаос, возвращаем координаты относительно центра экрана
   if (stage !== 'idle') {
-    // Глобальный наклон (Perspective Tilt)
     let tilt = -Math.PI / 8;
     let finalY = ty * Math.cos(tilt) - tz * Math.sin(tilt);
     let finalZ = ty * Math.sin(tilt) + tz * Math.cos(tilt);
-
     return { x: w/2 + tx, y: h/2 + finalY, z: finalZ };
   } 
   
@@ -164,46 +143,33 @@ function updateAndRenderStage() {
   let time = Date.now() * 0.001;
 
   particles.forEach(p => {
-    // 1. Получаем цель (куда лететь)
     let target = getTarget(p, currentStage, time);
     
-    // 2. Логика полета (Physics)
     if (currentStage === 'scatter') {
-      // Режим разлета (инерция после взрыва)
       p.x += p.vx; p.y += p.vy;
-      p.vx *= 0.95; p.vy *= 0.95; // Трение космоса
+      p.vx *= 0.96; p.vy *= 0.96; 
     } else {
-      // Режим магнитной сборки (упругое стремление к цели)
-      let ease = currentStage === 'giant_dna' ? 0.04 : 0.08;
+      let ease = currentStage === 'giant_dna' ? 0.03 : 0.07;
       p.vx += (target.x - p.x) * ease;
       p.vy += (target.y - p.y) * ease;
-      p.vx *= 0.7; // Демпфирование (чтобы не болтались как сопли)
-      p.vy *= 0.7;
+      p.vx *= 0.75; 
+      p.vy *= 0.75;
       p.x += p.vx;
       p.y += p.vy;
     }
 
-    // 3. 3D Масштаб и прозрачность
     let depthScale = target.z ? (target.z + 500) / 500 : 1;
-    depthScale = Math.max(0.2, Math.min(2, depthScale));
+    depthScale = Math.max(0.2, Math.min(2.5, depthScale));
 
-    // 4. Отрисовка
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.rad * depthScale, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(0, 229, 255, ${p.alpha * depthScale})`;
-    
-    if (currentStage === 'giant_dna') {
-      ctx.shadowBlur = 10 * depthScale; 
-      ctx.shadowColor = "rgba(0, 229, 255, 0.8)";
-    } else {
-      ctx.shadowBlur = 0;
-    }
+    ctx.fillStyle = `rgba(0, 179, 255, ${p.alpha * depthScale})`;
     ctx.fill();
   });
 }
 initEngine(); updateAndRenderStage(); window.addEventListener('resize', initEngine);
 
-// 5. ЛОГИКА СКРОЛЛА (ПЕРЕКЛЮЧЕНИЕ СТИЛЕЙ)
+// 5. ПРИВЯЗКА ФИГУР К СКРОЛЛУ
 function bindScrollStages() {
   const registerStage = (id, stageName) => {
     ScrollTrigger.create({
@@ -213,50 +179,47 @@ function bindScrollStages() {
     });
   };
   registerStage('#sec-hero', 'small_dnas');
-  registerStage('#sec-manifesto', 'grid');
-  registerStage('#sec-skills', 'sphere');
-  registerStage('#sec-cases', 'fluid');
+  registerStage('#sec-focus', 'grid');
+  registerStage('#sec-competencies', 'sphere');
+  registerStage('#sec-solutions', 'fluid');
 }
 
-// 6. ЗАПУСК И ВЗРЫВ
+// 6. ЗАПУСК ДВИЖКА (КНОПКА -> ДНК -> ВЗРЫВ)
 const authBtn = document.getElementById('auth-btn');
 
 authBtn.addEventListener('click', () => {
   soundtrack.play();
 
-  // Прячем текст прелоадера
-  gsap.to('#trigger-stage', { opacity: 0, duration: 0.5, onComplete: () => {
+  // Растворяем единственную кнопку
+  gsap.to('#trigger-stage', { opacity: 0, duration: 0.6, onComplete: () => {
     document.getElementById('trigger-stage').style.display = 'none';
-    currentStage = 'giant_dna'; // Начинаем 5-секундную сборку Большой ДНК
+    currentStage = 'giant_dna'; // Частицы начинают стягиваться в гигантскую спираль
   }});
 
-  // ВЗРЫВ на 5.8 сек (перед самым дропом)
+  // Взрыв ровно под дроп (5.8 сек)
   gsap.delayedCall(5.8, () => {
-    // Даем бешеную скорость частицам
     particles.forEach(p => {
       let angle = Math.random() * Math.PI * 2;
-      let force = Math.random() * 60 + 20; 
+      let force = Math.random() * 50 + 20; 
       p.vx = Math.cos(angle) * force; 
       p.vy = Math.sin(angle) * force;
     });
     
-    currentStage = 'scatter'; // Частицы летят по инерции
+    currentStage = 'scatter';
 
-    // Убираем черный экран прелоадера
     gsap.to('#preloader', { opacity: 0, duration: 1.0, ease: 'power2.out', onComplete: () => {
         document.getElementById('preloader').remove();
-        currentStage = 'small_dnas'; // Осколки превращаются в маленькие ДНК
-        bindScrollStages(); // Включаем реакцию на скролл
+        currentStage = 'small_dnas'; // Сборка осколков в малые спирали на заднем фоне
+        bindScrollStages();
       }
     });
 
-    // Показываем интерфейс сайта
     gsap.to('.main-wrapper', { opacity: 1, duration: 0.1 });
     document.querySelector('.main-wrapper').style.pointerEvents = 'auto';
 
-    // Плавный выезд текстов
+    // Кинематографичное проявление текстов (снятие блюра)
     const tl = gsap.timeline();
-    tl.fromTo('.animate-up', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2, stagger: 0.2, ease: 'power3.out' });
+    tl.fromTo('.animate-up', { y: 40, opacity: 0, filter: 'blur(10px)' }, { y: 0, opacity: 1, filter: 'blur(0px)', duration: 1.5, stagger: 0.2, ease: 'power3.out' });
 
     initTextTriggers();
   });
@@ -264,6 +227,6 @@ authBtn.addEventListener('click', () => {
 
 function initTextTriggers() {
   document.querySelectorAll('.scroll-reveal').forEach(el => {
-    gsap.to(el, { y: 0, opacity: 1, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none reverse' }});
+    gsap.to(el, { y: 0, opacity: 1, duration: 1.4, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none reverse' }});
   });
 }
